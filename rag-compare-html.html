@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RAG Pipeline - Text vs Vision &#xBE44;&#xAD50;</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',-apple-system,sans-serif;background:#0b1120;color:#c9d1e0;min-height:100vh}
+.header{text-align:center;padding:32px 16px 20px}
+.header h1{font-size:21px;color:#fff;letter-spacing:-0.5px}
+.header p{font-size:12px;color:#4e5d7a;margin-top:4px}
+.legend{display:flex;justify-content:center;gap:14px;margin-top:14px;flex-wrap:wrap}
+.legend-item{display:flex;align-items:center;gap:5px;font-size:10.5px;color:#8a9ab5}
+.legend-dot{width:9px;height:9px;border-radius:3px}
+.tabs{display:flex;justify-content:center;gap:8px;padding:0 16px 24px}
+.tab-btn{padding:8px 22px;border-radius:10px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.03);color:#8a9ab5;font-size:12.5px;font-weight:600;cursor:pointer;transition:all .25s}
+.tab-btn:hover{background:rgba(255,255,255,.06)}
+.tab-btn.active{background:rgba(99,102,241,.15);border-color:rgba(99,102,241,.3);color:#a5b4fc}
+.tab-btn.active-c{background:rgba(139,92,246,.12);border-color:rgba(139,92,246,.3);color:#c4b5fd}
+.view{display:none;padding:0 16px 40px}.view.active{display:block}
+.side{display:grid;grid-template-columns:1fr 1fr;gap:20px;max-width:1320px;margin:0 auto}
+.single{max-width:700px;margin:0 auto}
+.col-label{text-align:center;margin-bottom:14px}
+.col-badge{display:inline-block;font-size:11px;font-weight:700;padding:5px 16px;border-radius:20px;letter-spacing:.8px}
+.arrow{text-align:center;padding:4px 0;font-size:15px;color:#2a3550}
+.badge-row{text-align:center;margin-bottom:5px}
+.badge{display:inline-block;font-size:8.5px;font-weight:700;letter-spacing:1.1px;text-transform:uppercase;padding:3px 11px;border-radius:14px}
+.card{background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);border-radius:11px;padding:14px 16px;margin-bottom:4px;transition:all .25s}
+.card:hover{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.14)}
+.card.removed{border-color:rgba(239,68,68,.2);background:rgba(239,68,68,.02);opacity:.55;position:relative}
+.card.removed::after{content:"&#xC81C;&#xAC70;&#xB428;";position:absolute;top:7px;right:10px;font-size:8.5px;font-weight:700;color:#f87171;background:rgba(239,68,68,.15);padding:2px 7px;border-radius:4px}
+.card.new{border-color:rgba(16,185,129,.2);background:rgba(16,185,129,.025)}
+.card-head{display:flex;align-items:center;gap:6px;margin-bottom:4px}
+.card-icon{font-size:14px}
+.card-title{font-size:12px;font-weight:700;color:#fff}
+.card-file{font-size:9.5px;color:#4e5d7a;font-family:'SF Mono','Fira Code',monospace;margin-bottom:5px}
+.card-desc{font-size:11px;color:#8a9ab5;line-height:1.55}
+.card-desc strong{color:#d0d8e8;font-weight:600}
+.steps{display:flex;flex-direction:column;gap:4px;margin-top:8px}
+.step{display:flex;gap:8px;padding:7px 10px;background:rgba(255,255,255,.02);border-radius:7px;border:1px solid rgba(255,255,255,.03)}
+.sn{width:17px;height:17px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:8.5px;font-weight:700;color:#fff;flex-shrink:0;margin-top:1px}
+.st{font-size:10.5px;color:#9aabbd;line-height:1.5}
+.st strong{color:#d0d8e8;font-weight:600}
+.tag{display:inline-block;font-size:8.5px;font-weight:600;padding:1.5px 6px;border-radius:3px;margin:0 1px}
+.tag.cfg{background:rgba(245,158,11,.12);color:#fbbf24}
+.tag.par{background:rgba(59,130,246,.15);color:#60a5fa}
+.tag.rm{background:rgba(239,68,68,.12);color:#f87171}
+.tag.new-t{background:rgba(16,185,129,.12);color:#34d399}
+.tag.keep{background:rgba(100,116,139,.15);color:#94a3b8}
+.llm{display:inline-block;font-size:8.5px;font-weight:700;padding:2px 6px;border-radius:4px;background:rgba(239,68,68,.14);color:#f87171;border:1px solid rgba(239,68,68,.2);margin-right:2px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:7px}
+.gc{padding:9px;border-radius:8px;border:1px solid rgba(255,255,255,.05);background:rgba(255,255,255,.02)}
+.gc h4{font-size:10px;font-weight:700;margin-bottom:3px}
+.gc p{font-size:9.5px;color:#7a8ba0;line-height:1.4;margin:0}
+.decision{text-align:center;padding:9px;max-width:260px;margin:0 auto 7px;background:rgba(245,158,11,.07);border:1px dashed rgba(245,158,11,.22);border-radius:9px;font-size:11px;font-weight:600;color:#fbbf24}
+.sf{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:7px}
+.sf-box{padding:9px;border-radius:7px}
+.sf-box.ok{background:rgba(16,185,129,.04);border:1px solid rgba(16,185,129,.12)}
+.sf-box.fail{background:rgba(239,68,68,.03);border:1px solid rgba(239,68,68,.1)}
+.sf-box h4{font-size:10px;font-weight:700;margin-bottom:2px}
+.sf-box p{font-size:9.5px;line-height:1.35;margin:0}
+.ri{text-align:center;padding:10px 5px;border-radius:8px;border:1px solid rgba(139,92,246,.15);background:rgba(139,92,246,.04)}
+.ri .ic{font-size:15px;margin-bottom:3px}
+.ri .lb{font-size:9.5px;color:#a78bfa;font-weight:600}
+.ri .sm{font-size:8.5px;color:#556178;margin-top:2px;line-height:1.3}
+.grid-r{display:grid;gap:6px;margin-top:8px}
+.grid-r2{grid-template-columns:1fr 1fr}
+.grid-r4{grid-template-columns:repeat(4,1fr)}
+/* change box */
+.cb{display:flex;gap:8px;padding:8px 11px;border-radius:8px;margin-bottom:4px;font-size:10.5px;line-height:1.5}
+.cb .lbl{flex-shrink:0;font-size:9px;font-weight:700;padding:2px 7px;border-radius:4px;height:fit-content;margin-top:1px}
+.cb.bf{background:rgba(239,68,68,.04);border:1px solid rgba(239,68,68,.1)}.cb.bf .lbl{background:rgba(239,68,68,.12);color:#f87171}.cb.bf .txt{color:#fca5a5}
+.cb.af{background:rgba(16,185,129,.04);border:1px solid rgba(16,185,129,.1)}.cb.af .lbl{background:rgba(16,185,129,.12);color:#34d399}.cb.af .txt{color:#6ee7b7}
+/* removed block */
+.rm-block{padding:11px 14px;border-radius:9px;border:1px dashed rgba(239,68,68,.22);background:rgba(239,68,68,.025);margin-bottom:4px}
+.rm-block h4{font-size:11px;font-weight:700;color:#f87171;margin-bottom:6px}
+.rm-list{display:flex;flex-direction:column;gap:3px}
+.rm-item{display:flex;align-items:center;gap:6px;font-size:10px;color:#fca5a5;padding:4px 8px;background:rgba(239,68,68,.03);border-radius:5px}
+.rm-item .x{color:#ef4444;font-weight:700;font-size:12px;flex-shrink:0}
+.rm-new{margin-top:8px;padding:8px 10px;background:rgba(16,185,129,.05);border:1px solid rgba(16,185,129,.12);border-radius:7px;font-size:10.5px;color:#34d399;font-weight:600}
+/* model */
+.model-card{background:rgba(139,92,246,.035);border:1px solid rgba(139,92,246,.13);border-radius:11px;padding:14px 16px;margin-bottom:4px}
+.m-inner{background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.035);border-radius:7px;padding:9px 11px;margin-top:6px}
+.m-inner h5{font-size:10px;font-weight:700;color:#c084fc;margin-bottom:4px}
+.m-inner p{font-size:9.5px;color:#8a9ab5;line-height:1.45;margin:0}
+.m-out{margin-top:7px;padding:9px 11px;background:rgba(16,185,129,.04);border:1px solid rgba(16,185,129,.1);border-radius:7px}
+.m-out h5{font-size:10px;font-weight:700;color:#34d399;margin-bottom:4px}
+.m-out p{font-size:9.5px;color:#6ee7b7;line-height:1.45;margin:0}
+.config{font-family:'SF Mono','Fira Code',monospace;font-size:9px;color:#93c5fd;background:rgba(59,130,246,.05);border:1px solid rgba(59,130,246,.1);border-radius:6px;padding:8px 10px;margin-top:6px;line-height:1.55;white-space:pre-wrap}
+/* search diagram */
+.maxsim{margin-top:8px;padding:10px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.035);border-radius:8px;text-align:center}
+.maxsim h5{font-size:10px;font-weight:700;color:#fbbf24;margin-bottom:6px}
+.maxsim-row{display:flex;align-items:center;justify-content:center;gap:12px;padding:6px 0}
+.ms-col{text-align:center}
+.ms-col .ml{font-size:8px;font-weight:700;color:#818cf8;text-transform:uppercase;letter-spacing:.8px;margin-bottom:3px}
+.ms-col .md{font-size:9px;color:#6b7a99;margin-top:2px}
+.ms-box{width:40px;height:32px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:14px;margin:0 auto}
+.ms-arr{font-size:12px;color:#f59e0b;font-weight:700}
+.formula{text-align:center;margin-top:6px;font-family:'SF Mono','Fira Code',monospace;font-size:10px;color:#fbbf24;padding:6px;background:rgba(245,158,11,.05);border-radius:5px}
+/* vlm */
+.vlm-card{background:rgba(245,158,11,.025);border:1px solid rgba(245,158,11,.12);border-radius:11px;padding:14px 16px;margin-bottom:4px}
+.vlm-io{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px}
+.vlm-b{padding:9px;border-radius:7px}
+.vlm-b.inp{background:rgba(99,102,241,.04);border:1px solid rgba(99,102,241,.12)}
+.vlm-b.out{background:rgba(16,185,129,.04);border:1px solid rgba(16,185,129,.1)}
+.vlm-b h5{font-size:9.5px;font-weight:700;margin-bottom:4px}
+.vlm-b p{font-size:9.5px;line-height:1.45;margin:0}
+.vlm-tags{margin-top:8px;display:flex;gap:4px;flex-wrap:wrap}
+.vlm-tag{font-size:9px;font-weight:600;padding:3px 8px;border-radius:5px;background:rgba(245,158,11,.07);color:#fbbf24;border:1px solid rgba(245,158,11,.12)}
+/* highlight */
+.hl{display:flex;align-items:center;gap:7px;padding:7px 10px;margin-top:7px;border-radius:7px;border:1px solid rgba(16,185,129,.12);background:rgba(16,185,129,.03)}
+.hl .arr{color:#34d399;font-size:13px;flex-shrink:0}
+.hl .txt{font-size:10.5px;color:#6ee7b7;line-height:1.4}
+.hl .txt strong{color:#34d399}
+
+@media(max-width:960px){.side{grid-template-columns:1fr;max-width:700px}.grid-r4{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:520px){.grid2,.vlm-io,.sf{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>RAG Pipeline &#xBE44;&#xAD50;</h1>
+  <p>Text-based RAG &rarr; ColQwen2 Vision RAG</p>
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot" style="background:#94a3b8"></div>&#xBCC0;&#xACBD; &#xC5C6;&#xC74C;</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#ef4444"></div>&#xC81C;&#xAC70;</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#10b981"></div>&#xC2E0;&#xADDC; / &#xBCC0;&#xACBD;</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#8b5cf6"></div>&#xBAA8;&#xB378;</div>
+  </div>
+</div>
+
+<div class="tabs">
+  <button class="tab-btn active-c" onclick="sw('compare')" id="t-compare">&#xB098;&#xB780;&#xD788; &#xBE44;&#xAD50;</button>
+  <button class="tab-btn" onclick="sw('before')" id="t-before">Before (Text RAG)</button>
+  <button class="tab-btn" onclick="sw('after')" id="t-after">After (Vision RAG)</button>
+</div>
+
+<!-- ===================== COMPARE ===================== -->
+<div class="view active" id="v-compare">
+<div class="side">
+
+<!-- LEFT: Before -->
+<div>
+<div class="col-label"><span class="col-badge" style="background:rgba(59,130,246,.12);color:#60a5fa;border:1px solid rgba(59,130,246,.25)">BEFORE &mdash; Text-based RAG</span></div>
+
+<div class="badge-row"><span class="badge" style="background:rgba(59,130,246,.1);color:#60a5fa;border:1px solid rgba(59,130,246,.15)">1 &mdash; &#xC9C4;&#xC785;&#xC810;</span></div>
+<div class="card"><div class="card-head"><span class="card-icon">&#x1F680;</span><span class="card-title">POST /runDocument</span></div><div class="card-desc">DB &#xC870;&#xD68C; &rarr; MinIO &#xD30C;&#xC77C; &#xB85C;&#xB4DC;</div></div>
+<div class="arrow">&#x25BC;</div>
+
+<div class="badge-row"><span class="badge" style="background:rgba(168,85,247,.1);color:#c084fc;border:1px solid rgba(168,85,247,.15)">2 &mdash; &#xD30C;&#xC2F1;</span></div>
+<div class="card removed"><div class="card-head"><span class="card-icon">&#x1F4C2;</span><span class="card-title">VisionParser / RAGExcelParser</span></div><div class="card-desc"><strong>&#xD14D;&#xC2A4;&#xD2B8; &#xCD94;&#xCD9C;</strong> (PDF&#xD14C;&#xC774;&#xBE14;/&#xC774;&#xBBF8;&#xC9C0; + Excel&#xD589;/&#xC140;)</div></div>
+<div class="arrow">&#x25BC;</div>
+
+<div class="badge-row"><span class="badge" style="background:rgba(245,158,11,.1);color:#fbbf24;border:1px solid rgba(245,158,11,.15)">3 &mdash; &#xCCAD;&#xD0B9;</span></div>
+<div class="card removed">
+  <div class="card-head"><span class="card-icon">&#x2702;&#xFE0F;</span><span class="card-title">chunk_split()</span></div>
+  <div class="steps">
+    <div class="step"><div class="sn" style="background:#f59e0b">1</div><div class="st">&#xBB38;&#xC7A5; &#xB2E8;&#xC704; &#xBD84;&#xB9AC; <span class="tag cfg">.?!;\n</span></div></div>
+    <div class="step"><div class="sn" style="background:#f59e0b">2</div><div class="st">&#xC2AC;&#xB77C;&#xC774;&#xB529; &#xC708;&#xB3C4;&#xC6B0; <span class="tag cfg">300/50</span></div></div>
+    <div class="step"><div class="sn" style="background:#f59e0b">3</div><div class="st">&#xD14C;&#xC774;&#xBE14; &#xBCF4;&#xC874; / &#xC774;&#xBBF8;&#xC9C0; &#xB9E4;&#xD551;</div></div>
+  </div>
+</div>
+<div class="arrow">&#x25BC;</div>
+
+<div class="badge-row"><span class="badge" style="background:rgba(99,102,241,.1);color:#818cf8;border:1px solid rgba(99,102,241,.15)">4 &mdash; &#xD1A0;&#xD070;&#xB098;&#xC774;&#xC988;</span></div>
+<div class="card removed"><div class="card-head"><span class="card-icon">&#x1F520;</span><span class="card-title">tokenize_chunks()</span></div><div class="card-desc">content_ltks, content_sm_ltks, title_tks</div></div>
+<div class="arrow">&#x25BC;</div>
+
+<div class="badge-row"><span class="badge" style="background:rgba(239,68,68,.1);color:#f87171;border:1px solid rgba(239,68,68,.15)">5 &mdash; LLM &#xBD80;&#xAC00;</span></div>
+<div class="card removed"><div class="card-head"><span class="card-icon">&#x1F9E0;</span><span class="card-title">LLM &#xD0A4;&#xC6CC;&#xB4DC; / &#xC9C8;&#xBB38; &#xCD94;&#xCD9C;</span></div><div class="card-desc"><span class="llm">LLM</span> keyword_extraction + question_proposal</div></div>
+<div class="arrow">&#x25BC;</div>
+
+<div class="badge-row"><span class="badge" style="background:rgba(16,185,129,.1);color:#34d399;border:1px solid rgba(16,185,129,.15)">6 &mdash; &#xC784;&#xBCA0;&#xB529;</span></div>
+<div class="card removed">
+  <div class="card-head"><span class="card-icon">&#x1F9ED;</span><span class="card-title">embedding() &mdash; &#xB2E8;&#xC77C; &#xBCA1;&#xD130;</span></div>
+  <div class="card-desc">&#xD14D;&#xC2A4;&#xD2B8; &rarr; <strong>1024d &#xB2E8;&#xC77C; &#xBCA1;&#xD130;</strong></div>
+  <div class="grid2">
+    <div class="gc"><h4 style="color:#fbbf24">Ollama</h4><p>batch=32, concurrency=4</p></div>
+    <div class="gc"><h4 style="color:#34d399">OpenAI</h4><p>batch=64, 8191 tokens</p></div>
+  </div>
+</div>
+<div class="arrow">&#x25BC;</div>
+
+<div class="badge-row"><span class="badge" style="background:rgba(59,130,246,.1);color:#60a5fa;border:1px solid rgba(59,130,246,.15)">7 &mdash; &#xC800;&#xC7A5; &amp; &#xAC80;&#xC0C9;</span></div>
+<div class="card removed">
+  <div class="card-head"><span class="card-icon">&#x1F4BE;</span><span class="card-title">ES &#xBC8C;&#xD06C; &#xC778;&#xC11C;&#xD2B8; + Hybrid Search</span></div>
+  <div class="card-desc"><strong>q_1024_vec</strong> &rarr; cosine + BM25 &rarr; Fusion Ranking</div>
+</div>
+<div class="arrow">&#x25BC;</div>
+
+<div class="badge-row"><span class="badge" style="background:rgba(139,92,246,.1);color:#a78bfa;border:1px solid rgba(139,92,246,.15)">&#xACB0;&#xACFC;</span></div>
+<div class="card">
+  <div class="card-head"><span class="card-icon">&#x2705;</span><span class="card-title">&#xD14D;&#xC2A4;&#xD2B8; &#xCCAD;&#xD06C; &rarr; LLM</span></div>
+  <div class="grid-r grid-r2">
+    <div class="ri"><div class="ic">&#x1F4C4;</div><div class="lb">ranked chunks</div></div>
+    <div class="ri"><div class="ic">&#x1F5BC;&#xFE0F;</div><div class="lb">img URLs</div></div>
+  </div>
+</div>
+</div>
+
+<!-- RIGHT: After -->
+<div>
+<div class="col-label"><span class="col-badge" style="background:rgba(16,185,129,.12);color:#34d399;border:1px solid rgba(16,185,129,.25)">AFTER &mdash; ColQwen2 Vision RAG</span></div>
+
+<div class="badge-row"><span class="badge" style="background:rgba(59,130,246,.1);color:#60a5fa;border:1px solid rgba(59,130,246,.15)">1 &mdash; &#xC9C4;&#xC785;&#xC810;</span></div>
+<div class="card"><div class="card-head"><span class="card-icon">&#x1F680;</span><span class="card-title">POST /runDocument</span></div><div class="card-desc">DB &#xC870;&#xD68C; &rarr; MinIO &#xD30C;&#xC77C; &#xB85C;&#xB4DC;</div></div>
+<div class="arrow">&#x25BC;</div>
+
+<div class="badge-row"><span class="badge" style="background:rgba(16,185,129,.1);color:#34d399;border:1px solid rgba(16,185,129,.15)">2 &mdash; &#xC774;&#xBBF8;&#xC9C0; &#xBCC0;&#xD658; <span class="tag new-t">&#xC2E0;&#xADDC;</span></span></div>
+<div class="card new">
+  <div class="card-head"><span class="card-icon">&#x1F5BC;&#xFE0F;</span><span class="card-title">&#xD398;&#xC774;&#xC9C0; &rarr; &#xC774;&#xBBF8;&#xC9C0; &#xBCC0;&#xD658;</span></div>
+  <div class="grid2">
+    <div class="gc" style="border-color:rgba(239,68,68,.12)"><h4 style="color:#f87171">PDF</h4><p>pdf2image<br>&#xD398;&#xC774;&#xC9C0;&#xBCC4; &#xC774;&#xBBF8;&#xC9C0;</p></div>
+    <div class="gc" style="border-color:rgba(16,185,129,.12)"><h4 style="color:#34d399">Excel/CSV</h4><p>HTML &rarr; &#xB80C;&#xB354;&#xB9C1;<br>&#xC2DC;&#xD2B8;&#xBCC4; &#xC774;&#xBBF8;&#xC9C0;</p></div>
+  </div>
+  <div class="hl"><span class="arr">&larr;</span><span class="txt">&#xD14D;&#xC2A4;&#xD2B8; &#xCD94;&#xCD9C; &#xBD88;&#xD544;&#xC694;. <strong>1 page = 1 unit</strong></span></div>
+</div>
+<div class="arrow">&#x25BC;</div>
+
+<div class="badge-row"><span class="badge" style="background:rgba(239,68,68,.1);color:#f87171;border:1px solid rgba(239,68,68,.15)">3~5 &mdash; &#xC81C;&#xAC70;&#xB41C; &#xB2E8;&#xACC4;</span></div>
+<div class="rm-block">
+  <h4>&#x1F6AB; Chunking &#xD30C;&#xC774;&#xD504;&#xB77C;&#xC778; &#xC804;&#xCCB4; &#xC81C;&#xAC70;</h4>
+  <div class="rm-list">
+    <div class="rm-item"><span class="x">&#x2717;</span>chunk_split() / &#xC2AC;&#xB77C;&#xC774;&#xB529; &#xC708;&#xB3C4;&#xC6B0;</div>
+    <div class="rm-item"><span class="x">&#x2717;</span>tokenize_chunks()</div>
+    <div class="rm-item"><span class="x">&#x2717;</span>LLM &#xD0A4;&#xC6CC;&#xB4DC;/&#xC9C8;&#xBB38; &#xCD94;&#xCD9C;</div>
+  </div>
+  <div class="rm-new">&#x2605; &#xD398;&#xC774;&#xC9C0; = &#xCCAD;&#xD06C; (1 page = 1 unit)</div>
+</div>
+<div class="arrow">&#x25BC;</div>
+
+<div class="badge-row"><span class="badge" style="background:rgba(139,92,246,.1);color:#a78bfa;border:1px solid rgba(139,92,246,.15)">6 &mdash; &#xC784;&#xBCA0;&#xB529; (ColQwen2) <span class="tag new-t">&#xC2E0;&#xADDC;</span></span></div>
+<div class="model-card">
+  <div class="card-head"><span class="card-icon">&#x1F9E0;</span><span class="card-title">ColQwen2 &mdash; Multi-Vector</span></div>
+  <div class="card-file">vidore/colqwen2-v1 | Qwen2-VL + ColBERT</div>
+  <div class="m-inner"><h5>&#x2460; &#xC774;&#xBBF8;&#xC9C0; &#xC804;&#xCC98;&#xB9AC;</h5><p>&#xB9AC;&#xC0AC;&#xC774;&#xC988; &rarr; ViT &#xD328;&#xCE58; 14&times;14 &rarr; &#xC815;&#xADDC;&#xD654;</p></div>
+  <div class="m-inner"><h5>&#x2461; Vision Encoder</h5><p>&#xC774;&#xBBF8;&#xC9C0; &rarr; &#xD328;&#xCE58; &#xD1A0;&#xD070;</p></div>
+  <div class="m-inner"><h5>&#x2462; Linear Projection</h5><p>&#xD328;&#xCE58; &rarr; 128d &#xBCA1;&#xD130; &times; ~1030&#xAC1C;</p></div>
+  <div class="m-out"><h5>&#xCD9C;&#xB825;</h5><p>(pages, patches, 128) &#xBA40;&#xD2F0;&#xBCA1;&#xD130;</p></div>
+</div>
+<div class="arrow">&#x25BC;</div>
+
+<div class="badge-row"><span class="badge" style="background:rgba(59,130,246,.1);color:#60a5fa;border:1px solid rgba(59,130,246,.15)">7 &mdash; &#xC800;&#xC7A5; (Qdrant) <span class="tag new-t">&#xC2E0;&#xADDC;</span></span></div>
+<div class="card new">
+  <div class="card-head"><span class="card-icon">&#x1F4BE;</span><span class="card-title">Qdrant Multi-Vector + ES &#xD558;&#xC774;&#xBE0C;&#xB9AC;&#xB4DC;</span></div>
+  <div class="grid2">
+    <div class="gc" style="border-color:rgba(139,92,246,.12)"><h4 style="color:#a78bfa">Qdrant</h4><p>N&times;128 &#xBA40;&#xD2F0;&#xBCA1;&#xD130;<br>MaxSim comparator</p></div>
+    <div class="gc" style="border-color:rgba(59,130,246,.12)"><h4 style="color:#60a5fa">ES (&#xBCF4;&#xC870;)</h4><p>&#xBA54;&#xD0C0; + OCR &#xD14D;&#xC2A4;&#xD2B8;</p></div>
+  </div>
+</div>
+<div class="arrow">&#x25BC;</div>
+
+<div class="badge-row"><span class="badge" style="background:rgba(245,158,11,.1);color:#fbbf24;border:1px solid rgba(245,158,11,.15)">8 &mdash; &#xAC80;&#xC0C9; (MaxSim) <span class="tag new-t">&#xC2E0;&#xADDC;</span></span></div>
+<div class="card new" style="border-color:rgba(245,158,11,.15)">
+  <div class="card-head"><span class="card-icon">&#x1F50D;</span><span class="card-title">Late Interaction Search</span></div>
+  <div class="card-desc">&#xCFFC;&#xB9AC; &#xD1A0;&#xD070; &times; &#xD398;&#xC774;&#xC9C0; &#xD328;&#xCE58; &rarr; MaxSim &#xB7AD;&#xD0B9;</div>
+  <div class="formula" style="margin-top:6px;text-align:center;font-family:monospace;font-size:10px;color:#fbbf24;padding:5px;background:rgba(245,158,11,.05);border-radius:5px">Score = &Sigma;<sub>i</sub> max<sub>j</sub> sim(q<sub>i</sub>, p<sub>j</sub>)</div>
+</div>
+<div class="arrow">&#x25BC;</div>
+
+<div class="badge-row"><span class="badge" style="background:rgba(139,92,246,.1);color:#a78bfa;border:1px solid rgba(139,92,246,.15)">&#xACB0;&#xACFC;</span></div>
+<div class="vlm-card">
+  <div class="card-head"><span class="card-icon">&#x1F916;</span><span class="card-title">VLM (Qwen2-VL / GPT-4o)</span></div>
+  <div class="card-desc">&#xD398;&#xC774;&#xC9C0; &#xC774;&#xBBF8;&#xC9C0; &rarr; &#xBA40;&#xD2F0;&#xBAA8;&#xB2EC; LLM &#xC751;&#xB2F5;</div>
+  <div class="vlm-tags">
+    <span class="vlm-tag">&#xD14C;&#xC774;&#xBE14;/&#xCC28;&#xD2B8; &#xC9C1;&#xC811; &#xC774;&#xD574;</span>
+    <span class="vlm-tag">OCR &#xC624;&#xB958; &#xC5C6;&#xC74C;</span>
+  </div>
+</div>
+</div>
+
+</div>
+</div>
+
+<!-- ===================== BEFORE ===================== -->
+<div class="view" id="v-before">
+<div class="single">
+<div class="col-label"><span class="col-badge" style="background:rgba(59,130,246,.12);color:#60a5fa;border:1px solid rgba(59,130,246,.25)">BEFORE &mdash; Text-based RAG</span></div>
+
+<div class="badge-row"><span class="badge" style="background:rgba(59,130,246,.12);color:#60a5fa;border:1px solid rgba(59,130,246,.2)">1 &mdash; &#xC9C4;&#xC785;&#xC810;</span></div>
+<div class="card"><div class="card-head"><span class="card-icon">&#x1F680;</span><span class="card-title">POST /runDocument</span></div><div class="card-file">kms_endpoint.py:255</div><div class="card-desc"><strong>parsingService.run_document_rag(doc_id)</strong><br>DB &#xC870;&#xD68C; &rarr; MinIO &#xD30C;&#xC77C; &#xB85C;&#xB4DC; &rarr; process_begin_at &#xC124;&#xC815;</div></div>
+<div class="arrow">&#x25BC;</div>
+
+<div class="badge-row"><span class="badge" style="background:rgba(168,85,247,.12);color:#c084fc;border:1px solid rgba(168,85,247,.2)">2 &mdash; &#xD30C;&#xC11C; &#xBD84;&#xAE30;</span></div>
+<div class="card"><div class="card-head"><span class="card-icon">&#x1F500;</span><span class="card-title">parser_id &#xBD84;&#xAE30; (CHUNKER_MAP)</span></div>
+  <div class="grid2"><div class="gc" style="border-color:rgba(59,130,246,.12)"><h4 style="color:#60a5fa">"general"</h4><p>&#xD30C;&#xC77C; &#xD0C0;&#xC785; &#xAC10;&#xC9C0;</p></div><div class="gc" style="border-color:rgba(245,158,11,.12)"><h4 style="color:#fbbf24">"qna"</h4><p>Excel Q&amp;A &#xC30D; &#xCD94;&#xCD9C;</p></div></div></div>
+<div class="arrow">&#x25BC;</div>
+
+<div class="badge-row"><span class="badge" style="background:rgba(6,182,212,.12);color:#22d3ee;border:1px solid rgba(6,182,212,.2)">3 &mdash; &#xD30C;&#xC77C; &#xD30C;&#xC2F1;</span></div>
+<div class="card"><div class="card-head"><span class="card-icon">&#x1F4C2;</span><span class="card-title">&#xD30C;&#xC77C; &#xD0C0;&#xC785;&#xBCC4; &#xD30C;&#xC11C;</span></div>
+  <div class="grid2"><div class="gc" style="border-color:rgba(239,68,68,.12)"><h4 style="color:#f87171">PDF &mdash; VisionParser</h4><p>&#xD14D;&#xC2A4;&#xD2B8;/&#xD14C;&#xC774;&#xBE14;/&#xC774;&#xBBF8;&#xC9C0; &#xCD94;&#xCD9C;</p></div><div class="gc" style="border-color:rgba(16,185,129,.12)"><h4 style="color:#34d399">Excel &mdash; RAGExcelParser</h4><p>&#xD589;/&#xC140; &#xCD94;&#xCD9C;</p></div></div></div>
+<div class="arrow">&#x25BC;</div>
+
+<div class="badge-row"><span class="badge" style="background:rgba(245,158,11,.12);color:#fbbf24;border:1px solid rgba(245,158,11,.2)">4 &mdash; &#xCCAD;&#xD0B9;</span></div>
+<div class="card"><div class="card-head"><span class="card-icon">&#x2702;&#xFE0F;</span><span class="card-title">chunk_split / chunk_split_with_images</span></div>
+  <div class="steps">
+    <div class="step"><div class="sn" style="background:#f59e0b">1</div><div class="st">&#xBB38;&#xC7A5; &#xB2E8;&#xC704; &#xBD84;&#xB9AC; <span class="tag cfg">.?!;\n</span></div></div>
+    <div class="step"><div class="sn" style="background:#f59e0b">2</div><div class="st">&#xC2AC;&#xB77C;&#xC774;&#xB529; &#xC708;&#xB3C4;&#xC6B0; <span class="tag cfg">chunk_token=300</span> <span class="tag cfg">overlap=50</span></div></div>
+    <div class="step"><div class="sn" style="background:#f59e0b">3</div><div class="st">&#xD14C;&#xC774;&#xBE14; &#xBE14;&#xB85D; &#xBCF4;&#xC874; (PDF)</div></div>
+    <div class="step"><div class="sn" style="background:#f59e0b">4</div><div class="st">&#xC774;&#xBBF8;&#xC9C0;-&#xCCAD;&#xD06C; &#xB9E4;&#xD551; (PDF)</div></div>
+  </div></div>
+<div class="arrow">&#x25BC;</div>
+
+<div class="badge-row"><span class="badge" style="background:rgba(99,102,241,.12);color:#818cf8;border:1px solid rgba(99,102,241,.2)">5 &mdash; &#xD1A0;&#xD070;&#xB098;&#xC774;&#xC988;</span></div>
+<div class="card"><div class="card-head"><span class="card-icon">&#x1F520;</span><span class="card-title">tokenize_chunks()</span></div><div class="card-desc">content_ltks &middot; content_sm_ltks &middot; title_tks &middot; position_int</div></div>
+<div class="arrow">&#x25BC;</div>
+
+<div class="badge-row"><span class="badge" style="background:rgba(100,116,139,.12);color:#94a3b8;border:1px solid rgba(100,116,139,.2)">6 &mdash; &#xC774;&#xBBF8;&#xC9C0; &#xC5C5;&#xB85C;&#xB4DC;</span></div>
+<div class="decision">&#xC774;&#xBBF8;&#xC9C0; &#xC874;&#xC7AC;?</div>
+<div class="card"><div class="card-head"><span class="card-icon">&#x1F5BC;&#xFE0F;</span><span class="card-title">MinIO &#xC774;&#xBBF8;&#xC9C0; &#xC5C5;&#xB85C;&#xB4DC;</span></div><div class="card-desc">{kb}/img/{hash} <span class="tag par">asyncio.gather</span></div></div>
+<div class="arrow">&#x25BC;</div>
+
+<div class="badge-row"><span class="badge" style="background:rgba(239,68,68,.12);color:#f87171;border:1px solid rgba(239,68,68,.2)">7 &mdash; LLM &#xBD80;&#xAC00; &#xCC98;&#xB9AC;</span></div>
+<div class="card"><div class="card-head"><span class="card-icon">&#x1F9E0;</span><span class="card-title">LLM &#xD0A4;&#xC6CC;&#xB4DC; / &#xC9C8;&#xBB38; &#xCD94;&#xCD9C;</span></div>
+  <div class="grid2"><div class="gc" style="border-color:rgba(239,68,68,.12)"><h4 style="color:#f87171">important_kwd</h4><p><span class="llm">LLM</span> keyword_extraction</p></div><div class="gc" style="border-color:rgba(239,68,68,.12)"><h4 style="color:#f87171">question_kwd</h4><p><span class="llm">LLM</span> question_proposal</p></div></div></div>
+<div class="arrow">&#x25BC;</div>
+
+<div class="badge-row"><span class="badge" style="background:rgba(16,185,129,.12);color:#34d399;border:1px solid rgba(16,185,129,.2)">8 &mdash; &#xC784;&#xBCA0;&#xB529;</span></div>
+<div class="card"><div class="card-head"><span class="card-icon">&#x1F9ED;</span><span class="card-title">embedding(docs, app, llm)</span></div><div class="card-file">embedding_service.py:435</div>
+  <div class="card-desc">&#xD14D;&#xC2A4;&#xD2B8; &rarr; <strong>1024d &#xB2E8;&#xC77C; &#xBCA1;&#xD130;</strong></div>
+  <div class="grid2"><div class="gc"><h4 style="color:#fbbf24">Ollama</h4><p>batch=32, concurrency=4, HF tokenizer</p></div><div class="gc"><h4 style="color:#34d399">OpenAI</h4><p>batch=64, truncate 8191 tokens</p></div></div></div>
+<div class="arrow">&#x25BC;</div>
+
+<div class="badge-row"><span class="badge" style="background:rgba(59,130,246,.12);color:#60a5fa;border:1px solid rgba(59,130,246,.2)">9 &mdash; &#xC778;&#xB371;&#xC2F1; &amp; &#xAC80;&#xC0C9;</span></div>
+<div class="card"><div class="card-head"><span class="card-icon">&#x1F4BE;</span><span class="card-title">ES &#xBC8C;&#xD06C; &#xC778;&#xC11C;&#xD2B8; + Hybrid Search</span></div>
+  <div class="card-desc">q_1024_vec &rarr; <strong>Dense(cosine) + BM25</strong> &rarr; Fusion Ranking</div>
+  <div class="sf"><div class="sf-box ok"><h4 style="color:#34d399">&#x2705; &#xC131;&#xACF5;</h4><p style="color:#6ee7b7">parsing_status=1</p></div><div class="sf-box fail"><h4 style="color:#f87171">&#x274C; &#xC2E4;&#xD328;</h4><p style="color:#fca5a5">&#xB864;&#xBC31; + &#xC5D0;&#xB7EC; &#xC0C1;&#xD0DC;</p></div></div></div>
+<div class="arrow">&#x25BC;</div>
+
+<div class="badge-row"><span class="badge" style="background:rgba(139,92,246,.12);color:#a78bfa;border:1px solid rgba(139,92,246,.2)">&#xC644;&#xB8CC;</span></div>
+<div class="card"><div class="card-head"><span class="card-icon">&#x2705;</span><span class="card-title">Fusion Ranking &#xACB0;&#xACFC;</span></div><div class="card-desc">ranked chunks + pre-signed img URLs</div></div>
+</div>
+</div>
+
+<!-- ===================== AFTER ===================== -->
+<div class="view" id="v-after">
+<div class="single">
+<div class="col-label"><span class="col-badge" style="background:rgba(16,185,129,.12);color:#34d399;border:1px solid rgba(16,185,129,.25)">AFTER &mdash; ColQwen2 Vision RAG</span></div>
+
+<div class="badge-row"><span class="badge" style="background:rgba(59,130,246,.12);color:#60a5fa;border:1px solid rgba(59,130,246,.2)">1 &mdash; &#xC9C4;&#xC785;&#xC810;</span></div>
+<div class="card"><div class="card-head"><span class="card-icon">&#x1F680;</span><span class="card-title">POST /runDocument</span></div><div class="card-file">kms_endpoint.py</div><div class="card-desc"><strong>parsingService.run_document_rag(doc_id)</strong><br>DB &#xC870;&#xD68C; &rarr; MinIO &#xD30C;&#xC77C; &#xB85C;&#xB4DC;</div></div>
+<div class="arrow">&#x25BC;</div>
+
+<div class="badge-row"><span class="badge" style="background:rgba(16,185,129,.12);color:#34d399;border:1px solid rgba(16,185,129,.2)">2 &mdash; &#xC774;&#xBBF8;&#xC9C0; &#xBCC0;&#xD658; <span class="tag new-t">&#xC2E0;&#xADDC;</span></span></div>
+<div class="cb bf"><span class="lbl">&#xAE30;&#xC874;</span><span class="txt">VisionParser &rarr; &#xD14D;&#xC2A4;&#xD2B8; &#xCD94;&#xCD9C; &rarr; &#xCCAD;&#xD0B9;</span></div>
+<div class="cb af"><span class="lbl">&#xBCC0;&#xACBD;</span><span class="txt">&#xD398;&#xC774;&#xC9C0; &rarr; <strong>&#xC774;&#xBBF8;&#xC9C0; &#xBCC0;&#xD658;</strong> (&#xD14D;&#xC2A4;&#xD2B8; &#xCD94;&#xCD9C; &#xBD88;&#xD544;&#xC694;)</span></div>
+<div class="card new"><div class="card-head"><span class="card-icon">&#x1F5BC;&#xFE0F;</span><span class="card-title">&#xD30C;&#xC77C; &#xD0C0;&#xC785;&#xBCC4; &#xC774;&#xBBF8;&#xC9C0; &#xBCC0;&#xD658;</span></div>
+  <div class="grid2"><div class="gc" style="border-color:rgba(239,68,68,.12)"><h4 style="color:#f87171">PDF</h4><p>pdf2image (poppler/PyMuPDF)<br>&#xD398;&#xC774;&#xC9C0;&#xBCC4; &#xC774;&#xBBF8;&#xC9C0;</p></div><div class="gc" style="border-color:rgba(16,185,129,.12)"><h4 style="color:#34d399">Excel/CSV</h4><p>HTML &rarr; &#xB80C;&#xB354;&#xB9C1; &#xC774;&#xBBF8;&#xC9C0;&#xD654;<br>(playwright/imgkit)</p></div></div>
+  <div class="m-out" style="margin-top:7px"><h5>&#xCD9C;&#xB825;: page_images: List[PIL.Image]</h5><p>1 page = 1 &#xC774;&#xBBF8;&#xC9C0; (&#xD574;&#xC0C1;&#xB3C4; &#xC720;&#xC9C0;)</p></div></div>
+<div class="arrow">&#x25BC;</div>
+
+<div class="badge-row"><span class="badge" style="background:rgba(239,68,68,.12);color:#f87171;border:1px solid rgba(239,68,68,.2)">3 &mdash; &#xAE30;&#xC874; &#xD30C;&#xC774;&#xD504;&#xB77C;&#xC778; &#xC81C;&#xAC70;</span></div>
+<div class="rm-block">
+  <h4>&#x1F6AB; Chunking &#xD30C;&#xC774;&#xD504;&#xB77C;&#xC778; &#xC804;&#xCCB4; &#xC81C;&#xAC70;</h4>
+  <div class="rm-list">
+    <div class="rm-item"><span class="x">&#x2717;</span>advanced_chunk_split() / advanced_chunk_split_with_images()</div>
+    <div class="rm-item"><span class="x">&#x2717;</span>tokenize_chunks()</div>
+    <div class="rm-item"><span class="x">&#x2717;</span>&#xC2AC;&#xB77C;&#xC774;&#xB529; &#xC708;&#xB3C4;&#xC6B0; (300/50)</div>
+    <div class="rm-item"><span class="x">&#x2717;</span>&#xBB38;&#xC7A5; &#xBD84;&#xB9AC; / &#xD14C;&#xC774;&#xBE14; &#xBCF4;&#xC874;</div>
+    <div class="rm-item"><span class="x">&#x2717;</span>LLM &#xD0A4;&#xC6CC;&#xB4DC; / &#xC9C8;&#xBB38; &#xCD94;&#xCD9C;</div>
+  </div>
+  <div class="rm-new">&#x2605; &#xD398;&#xC774;&#xC9C0; = &#xCCAD;&#xD06C; (1 page = 1 unit)</div>
+</div>
+<div class="arrow">&#x25BC;</div>
+
+<div class="badge-row"><span class="badge" style="background:rgba(139,92,246,.12);color:#a78bfa;border:1px solid rgba(139,92,246,.2)">4 &mdash; &#xC784;&#xBCA0;&#xB529; (ColQwen2) <span class="tag new-t">&#xC2E0;&#xADDC;</span></span></div>
+<div class="cb bf"><span class="lbl">&#xAE30;&#xC874;</span><span class="txt">&#xD14D;&#xC2A4;&#xD2B8; &rarr; &#xB2E8;&#xC77C; &#xBCA1;&#xD130; (1024d)</span></div>
+<div class="cb af"><span class="lbl">&#xBCC0;&#xACBD;</span><span class="txt">&#xC774;&#xBBF8;&#xC9C0; &rarr; <strong>&#xBA40;&#xD2F0;&#xBCA1;&#xD130;</strong> (&#xD328;&#xCE58; &times; 128d)</span></div>
+<div class="model-card">
+  <div class="card-head"><span class="card-icon">&#x1F9E0;</span><span class="card-title">ColQwen2 &mdash; vidore/colqwen2-v1</span></div>
+  <div class="card-file">Qwen2-VL &#xAE30;&#xBC18; + ColBERT Late Interaction</div>
+  <div class="m-inner"><h5>&#x2460; ColQwen2Processor &#xC774;&#xBBF8;&#xC9C0; &#xC804;&#xCC98;&#xB9AC;</h5><p>&#xB9AC;&#xC0AC;&#xC774;&#xC988; (448&times;448 or &#xB3D9;&#xC801;) &rarr; ViT &#xD328;&#xCE58; &#xBD84;&#xD560; (14&times;14) &rarr; &#xC815;&#xADDC;&#xD654;</p></div>
+  <div class="m-inner"><h5>&#x2461; Qwen2-VL Vision Encoder</h5><p>&#xC774;&#xBBF8;&#xC9C0; &rarr; &#xD328;&#xCE58; &#xD1A0;&#xD070; (&#xAC01; &#xD328;&#xCE58;&#xAC00; &#xC774;&#xBBF8;&#xC9C0; &#xC601;&#xC5ED; &#xD45C;&#xD604;)</p></div>
+  <div class="m-inner"><h5>&#x2462; Linear Projection Layer</h5><p>&#xD328;&#xCE58; &#xD1A0;&#xD070; &rarr; 128d &#xC784;&#xBCA0;&#xB529;. 1 page &rarr; ~1030&#xAC1C; &#xBCA1;&#xD130;</p></div>
+  <div class="m-out"><h5>&#xCD9C;&#xB825;: Multi-Vector Embedding</h5><p>shape: (num_pages, num_patches, 128)<br>&#xC608;: 10&#xD398;&#xC774;&#xC9C0; PDF &rarr; 10 &times; 1030 &times; 128</p></div>
+</div>
+<div class="arrow">&#x25BC;</div>
+
+<div class="badge-row"><span class="badge" style="background:rgba(59,130,246,.12);color:#60a5fa;border:1px solid rgba(59,130,246,.2)">5 &mdash; &#xC800;&#xC7A5; &#xC804;&#xB7B5; <span class="tag new-t">&#xC2E0;&#xADDC;</span></span></div>
+<div class="cb bf"><span class="lbl">&#xAE30;&#xC874;</span><span class="txt">ES&#xC5D0; &#xB2E8;&#xC77C; &#xBCA1;&#xD130; (q_1024_vec)</span></div>
+<div class="cb af"><span class="lbl">&#xBCC0;&#xACBD;</span><span class="txt">Qdrant &#xBA40;&#xD2F0;&#xBCA1;&#xD130; + ES &#xD558;&#xC774;&#xBE0C;&#xB9AC;&#xB4DC;</span></div>
+<div class="card new">
+  <div class="card-head"><span class="card-icon">&#x1F4BE;</span><span class="card-title">Option A: Qdrant (&#xCD94;&#xCC9C;)</span></div>
+  <div class="config">{
+  vectors: {
+    "colqwen2": {
+      size: 128, distance: "Cosine",
+      multivector_config: { comparator: "max_sim" }
+    }
+  }
+}</div>
+  <div class="m-inner" style="margin-top:6px"><h5>&#xD398;&#xC774;&#xC9C0;&#xBCC4; &#xD3EC;&#xC778;&#xD2B8;</h5><p>id: page_hash | vector: N&times;128<br>payload: { doc_id, kb_id, page_num, img_id }</p></div>
+</div>
+<div style="height:4px"></div>
+<div class="card new">
+  <div class="card-head"><span class="card-icon">&#x1F504;</span><span class="card-title">Option A-2: ES &#xC720;&#xC9C0; (&#xB4C0;&#xC5BC; &#xC778;&#xB371;&#xC2A4;)</span></div>
+  <div class="grid2"><div class="gc" style="border-color:rgba(59,130,246,.12)"><h4 style="color:#60a5fa">ES</h4><p>&#xBA54;&#xD0C0; + OCR &#xBCF4;&#xC870; &#xD14D;&#xC2A4;&#xD2B8;</p></div><div class="gc" style="border-color:rgba(139,92,246,.12)"><h4 style="color:#a78bfa">Qdrant</h4><p>&#xBA40;&#xD2F0;&#xBCA1;&#xD130; + payload</p></div></div>
+</div>
+<div class="arrow">&#x25BC;</div>
+
+<div class="badge-row"><span class="badge" style="background:rgba(245,158,11,.12);color:#fbbf24;border:1px solid rgba(245,158,11,.2)">6 &mdash; &#xAC80;&#xC0C9; (Late Interaction) <span class="tag new-t">&#xC2E0;&#xADDC;</span></span></div>
+<div class="cb bf"><span class="lbl">&#xAE30;&#xC874;</span><span class="txt">query &rarr; &#xB2E8;&#xC77C;&#xBCA1;&#xD130; &rarr; cosine &rarr; &#xB7AD;&#xD0B9;</span></div>
+<div class="cb af"><span class="lbl">&#xBCC0;&#xACBD;</span><span class="txt">query &rarr; &#xBA40;&#xD2F0;&#xBCA1;&#xD130; &rarr; MaxSim &rarr; &#xB7AD;&#xD0B9;</span></div>
+<div class="card new" style="border-color:rgba(245,158,11,.15)">
+  <div class="card-head"><span class="card-icon">&#x1F50D;</span><span class="card-title">ColQwen2 Late Interaction Search</span></div>
+  <div class="steps">
+    <div class="step"><div class="sn" style="background:#f59e0b">1</div><div class="st"><strong>Query Encoding</strong><br>process_queries() &rarr; (1, M, 128) M&asymp;30~50 &#xD1A0;&#xD070;</div></div>
+  </div>
+  <div class="maxsim">
+    <h5>&#x2461; Late Interaction (MaxSim)</h5>
+    <div class="maxsim-row">
+      <div class="ms-col"><div class="ml">Query</div><div class="ms-box" style="background:rgba(99,102,241,.08);border:1px solid rgba(99,102,241,.15)">&#x1F4DD;</div><div class="md">M&times;128</div></div>
+      <div class="ms-arr">&#x2194; MaxSim &#x2194;</div>
+      <div class="ms-col"><div class="ml">Page</div><div class="ms-box" style="background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.15)">&#x1F5BC;&#xFE0F;</div><div class="md">N&times;128</div></div>
+    </div>
+    <div class="formula">Score = &Sigma;<sub>i</sub> max<sub>j</sub> sim(q<sub>i</sub>, p<sub>j</sub>)</div>
+  </div>
+  <div class="steps" style="margin-top:8px">
+    <div class="step"><div class="sn" style="background:#f59e0b">3</div><div class="st"><strong>&#xACB0;&#xACFC; &#xB7AD;&#xD0B9;</strong><br>Top-K &#xD398;&#xC774;&#xC9C0; &rarr; MinIO &#xC6D0;&#xBCF8; &#xC774;&#xBBF8;&#xC9C0; &#xB85C;&#xB4DC; &rarr; LLM &#xC804;&#xB2EC;</div></div>
+  </div>
+</div>
+<div class="arrow">&#x25BC;</div>
+
+<div class="badge-row"><span class="badge" style="background:rgba(245,158,11,.12);color:#fbbf24;border:1px solid rgba(245,158,11,.2)">7 &mdash; &#xBA40;&#xD2F0;&#xBAA8;&#xB2EC; &#xC751;&#xB2F5; <span class="tag new-t">&#xC2E0;&#xADDC;</span></span></div>
+<div class="cb bf"><span class="lbl">&#xAE30;&#xC874;</span><span class="txt">&#xD14D;&#xC2A4;&#xD2B8; &#xCCAD;&#xD06C; &rarr; LLM &#xD504;&#xB86C;&#xD504;&#xD2B8;</span></div>
+<div class="cb af"><span class="lbl">&#xBCC0;&#xACBD;</span><span class="txt">&#xD398;&#xC774;&#xC9C0; &#xC774;&#xBBF8;&#xC9C0; &rarr; VLM (&#xBA40;&#xD2F0;&#xBAA8;&#xB2EC; LLM)</span></div>
+<div class="vlm-card">
+  <div class="card-head"><span class="card-icon">&#x1F916;</span><span class="card-title">Multimodal LLM (Qwen2-VL / GPT-4o)</span></div>
+  <div class="vlm-io">
+    <div class="vlm-b inp"><h5 style="color:#818cf8">&#xC785;&#xB825;</h5><p>[&#xC2DC;&#xC2A4;&#xD15C;] &#xC5F0;&#xAE08; &#xAD00;&#xB828; &#xB2F5;&#xBCC0;<br>[&#xC774;&#xBBF8;&#xC9C0;] Top-K &#xD398;&#xC774;&#xC9C0;<br>[&#xC9C8;&#xBB38;] &#x201C;&#xC5F0;&#xAE08; &#xC218;&#xAE09; &#xC870;&#xAC74;?&#x201D;</p></div>
+    <div class="vlm-b out"><h5 style="color:#34d399">&#xCD9C;&#xB825;</h5><p>&#x201C;&#xC5F0;&#xAE08; &#xC218;&#xAE09; &#xC870;&#xAC74;&#xC740;...&#x201D;<br>+ &#xCC38;&#xC870; &#xD398;&#xC774;&#xC9C0; &#xBC88;&#xD638;</p></div>
+  </div>
+  <div class="vlm-tags">
+    <span class="vlm-tag">&#xD14C;&#xC774;&#xBE14;/&#xCC28;&#xD2B8; &#xC9C1;&#xC811; &#xC774;&#xD574;</span>
+    <span class="vlm-tag">OCR &#xC624;&#xB958; &#xC5C6;&#xC74C;</span>
+    <span class="vlm-tag">&#xC774;&#xBBF8;&#xC9C0; &#xC790;&#xCCB4;&#xB97C; &#xC77D;&#xC74C;</span>
+  </div>
+</div>
+</div>
+</div>
+
+<script>
+function sw(v){
+  document.querySelectorAll('.view').forEach(function(el){el.classList.remove('active')});
+  document.querySelectorAll('.tab-btn').forEach(function(el){el.classList.remove('active','active-c')});
+  document.getElementById('v-'+v).classList.add('active');
+  var b=document.getElementById('t-'+v);
+  b.classList.add(v==='compare'?'active-c':'active');
+}
+</script>
+</body>
+</html>
