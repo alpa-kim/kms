@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KMS Graph Pipeline - Before vs After</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',-apple-system,sans-serif;background:#0b1120;color:#c9d1e0;min-height:100vh}
+
+/* Header */
+.header{text-align:center;padding:32px 16px 24px}
+.header h1{font-size:22px;color:#fff;letter-spacing:-0.5px}
+.header p{font-size:12px;color:#4e5d7a;margin-top:4px}
+.legend{display:flex;justify-content:center;gap:16px;margin-top:16px;flex-wrap:wrap}
+.legend-item{display:flex;align-items:center;gap:6px;font-size:11px;color:#8a9ab5}
+.legend-dot{width:10px;height:10px;border-radius:3px}
+
+/* Tabs */
+.tabs{display:flex;justify-content:center;gap:8px;padding:0 16px 24px}
+.tab-btn{padding:8px 24px;border-radius:10px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.03);color:#8a9ab5;font-size:13px;font-weight:600;cursor:pointer;transition:all .25s}
+.tab-btn:hover{background:rgba(255,255,255,.06)}
+.tab-btn.active{background:rgba(99,102,241,.15);border-color:rgba(99,102,241,.3);color:#a5b4fc}
+.tab-btn.active-compare{background:rgba(139,92,246,.12);border-color:rgba(139,92,246,.3);color:#c4b5fd}
+
+/* Layout */
+.view{display:none;padding:0 16px 40px}
+.view.active{display:block}
+.side-by-side{display:grid;grid-template-columns:1fr 1fr;gap:24px;max-width:1300px;margin:0 auto}
+.single{max-width:680px;margin:0 auto}
+.col-label{text-align:center;margin-bottom:16px}
+.col-badge{display:inline-block;font-size:11px;font-weight:700;padding:5px 16px;border-radius:20px;letter-spacing:1px}
+
+/* Card styles */
+.arrow{text-align:center;padding:5px 0;font-size:16px;color:#2a3550}
+.badge-row{text-align:center;margin-bottom:6px}
+.badge{display:inline-block;font-size:9px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;padding:3px 12px;border-radius:16px}
+.card{background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:14px 16px;margin-bottom:5px;transition:all .25s}
+.card:hover{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.14)}
+.card.changed{border-color:rgba(239,68,68,.25);background:rgba(239,68,68,.03)}
+.card.removed{border-color:rgba(239,68,68,.2);background:rgba(239,68,68,.02);opacity:.6;position:relative}
+.card.removed::after{content:"삭제됨";position:absolute;top:8px;right:12px;font-size:9px;font-weight:700;color:#f87171;background:rgba(239,68,68,.15);padding:2px 8px;border-radius:4px}
+.card.new{border-color:rgba(16,185,129,.25);background:rgba(16,185,129,.03)}
+.card-head{display:flex;align-items:center;gap:6px;margin-bottom:4px}
+.card-icon{font-size:15px}
+.card-title{font-size:12.5px;font-weight:700;color:#fff}
+.card-desc{font-size:11.5px;color:#8a9ab5;line-height:1.55}
+.card-desc strong{color:#d0d8e8}
+.steps{display:flex;flex-direction:column;gap:4px;margin-top:8px}
+.step{display:flex;gap:8px;padding:7px 10px;background:rgba(255,255,255,.02);border-radius:7px;border:1px solid rgba(255,255,255,.03)}
+.sn{width:18px;height:18px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff;flex-shrink:0;margin-top:1px}
+.st{font-size:11px;color:#9aabbd;line-height:1.5}
+.st strong{color:#d0d8e8}
+.tag{display:inline-block;font-size:9px;font-weight:600;padding:1.5px 6px;border-radius:3px;margin:0 2px}
+.tag.keep{background:rgba(100,116,139,.15);color:#94a3b8}
+.tag.changed{background:rgba(239,68,68,.12);color:#f87171}
+.tag.new-tag{background:rgba(16,185,129,.12);color:#34d399}
+.cypher{font-family:'SF Mono','Fira Code',monospace;font-size:10px;color:#f9a8d4;background:rgba(219,39,119,.06);border:1px solid rgba(219,39,119,.12);border-radius:6px;padding:8px 10px;margin-top:6px;line-height:1.5;white-space:pre-wrap;word-break:break-all}
+.note{margin-top:8px;padding:8px 10px;border-radius:6px;background:rgba(245,158,11,.06);border:1px solid rgba(245,158,11,.12);font-size:10.5px;color:#fbbf24;line-height:1.45}
+.decision{text-align:center;padding:10px;max-width:280px;margin:0 auto 8px;background:rgba(245,158,11,.07);border:1px dashed rgba(245,158,11,.25);border-radius:10px;font-size:12px;font-weight:600;color:#fbbf24}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px}
+.gc{padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,.05);background:rgba(255,255,255,.02)}
+.gc h4{font-size:10.5px;font-weight:700;margin-bottom:3px}
+.gc p{font-size:10px;color:#7a8ba0;line-height:1.4;margin:0}
+.grid-result{display:grid;gap:6px;margin-top:10px}
+.grid-r3{grid-template-columns:repeat(3,1fr)}
+.grid-r4{grid-template-columns:repeat(4,1fr)}
+.ri{text-align:center;padding:10px 6px;border-radius:8px;border:1px solid rgba(139,92,246,.15);background:rgba(139,92,246,.04)}
+.ri .ic{font-size:16px;margin-bottom:3px}
+.ri .lb{font-size:10px;color:#a78bfa;font-weight:600}
+.ri .sm{font-size:9px;color:#556178;margin-top:2px;line-height:1.3}
+
+.highlight-row{display:flex;align-items:center;gap:8px;padding:8px 12px;margin-top:8px;border-radius:8px;border:1px solid rgba(239,68,68,.15);background:rgba(239,68,68,.04)}
+.highlight-row .arrow-icon{color:#f87171;font-size:14px;flex-shrink:0}
+.highlight-row .text{font-size:11px;color:#fca5a5;line-height:1.45}
+
+@media(max-width:900px){
+  .side-by-side{grid-template-columns:1fr;max-width:680px}
+  .grid-r4{grid-template-columns:repeat(2,1fr)}
+}
+@media(max-width:520px){
+  .grid2{grid-template-columns:1fr}
+  .grid-r3{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>KMS Graph Pipeline &#xBE44;&#xAD50;</h1>
+  <p>Elasticsearch &#xAE30;&#xC874; &rarr; Neo4j &#xC801;&#xC6A9; &#xD6C4;</p>
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot" style="background:#94a3b8"></div>&#xBCC0;&#xACBD; &#xC5C6;&#xC74C;</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#ef4444"></div>&#xBCC0;&#xACBD; / &#xC0AD;&#xC81C;</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#10b981"></div>&#xC2E0;&#xADDC;</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#f59e0b"></div>&#xBD80;&#xBD84; &#xBCC0;&#xACBD;</div>
+  </div>
+</div>
+
+<div class="tabs">
+  <button class="tab-btn active-compare" onclick="switchView('compare')" id="tab-compare">&#xB098;&#xB780;&#xD788; &#xBE44;&#xAD50;</button>
+  <button class="tab-btn" onclick="switchView('before')" id="tab-before">Before (ES)</button>
+  <button class="tab-btn" onclick="switchView('after')" id="tab-after">After (Neo4j)</button>
+</div>
+
+<!-- ==================== COMPARE VIEW ==================== -->
+<div class="view active" id="view-compare">
+<div class="side-by-side">
+
+<!-- LEFT: Before -->
+<div>
+  <div class="col-label"><span class="col-badge" style="background:rgba(59,130,246,.12);color:#60a5fa;border:1px solid rgba(59,130,246,.25)">BEFORE &mdash; Elasticsearch</span></div>
+
+  <div class="badge-row"><span class="badge" style="background:rgba(100,116,139,.1);color:#94a3b8;border:1px solid rgba(100,116,139,.15)">1 &mdash; &#xCD08;&#xAE30;&#xD654;</span></div>
+  <div class="card"><div class="card-head"><span class="card-icon">&#x1F680;</span><span class="card-title">run_kms_graph_svc(payload)</span></div><div class="card-desc">KB &#xC124;&#xC815; &#xAC80;&#xC99D; / entity_types &#xD655;&#xC778;</div></div>
+  <div class="arrow">&#x25BC;</div>
+
+  <div class="badge-row"><span class="badge" style="background:rgba(100,116,139,.1);color:#94a3b8;border:1px solid rgba(100,116,139,.15)">2 &mdash; &#xC11C;&#xBE0C;&#xADF8;&#xB798;&#xD504; &#xC218;&#xC9D1;</span></div>
+  <div class="card"><div class="card-head"><span class="card-icon">&#x1F4C4;</span><span class="card-title">collect_subgraphs / GeneralKGExt</span></div><div class="card-desc">&#xBB38;&#xC11C; &#xC21C;&#xD68C; &rarr; LLM &#xCD94;&#xCD9C; &rarr; NetworkX &#xC11C;&#xBE0C;&#xADF8;&#xB798;&#xD504;</div></div>
+  <div class="arrow">&#x25BC;</div>
+
+  <div class="badge-row"><span class="badge" style="background:rgba(239,68,68,.1);color:#f87171;border:1px solid rgba(239,68,68,.15)">3 &mdash; &#xBCD1;&#xD569; &amp; &#xC800;&#xC7A5;</span></div>
+  <div class="card removed">
+    <div class="card-head"><span class="card-icon">&#x1F4E6;</span><span class="card-title">merge_subgraphs_batch()</span></div>
+    <div class="steps">
+      <div class="step"><div class="sn" style="background:#ef4444">1</div><div class="st"><strong>insert_subgraphs_batch()</strong> DB &#xBC31;&#xC5C5;</div></div>
+      <div class="step"><div class="sn" style="background:#ef4444">2</div><div class="st"><strong>get_graph()</strong> ES&#xC5D0;&#xC11C; &#xAE00;&#xB85C;&#xBC8C; &#xADF8;&#xB798;&#xD504; &#xB85C;&#xB4DC;</div></div>
+      <div class="step"><div class="sn" style="background:#ef4444">3</div><div class="st"><strong>graph_merge()</strong> &#xC21C;&#xCC28; &#xBCD1;&#xD569;</div></div>
+      <div class="step"><div class="sn" style="background:#ef4444">4</div><div class="st"><strong>nx.pagerank()</strong></div></div>
+      <div class="step"><div class="sn" style="background:#ef4444">5</div><div class="st"><strong>insert_global_graph()</strong> ES &#xC800;&#xC7A5;</div></div>
+    </div>
+  </div>
+  <div class="arrow">&#x25BC;</div>
+
+  <div class="badge-row"><span class="badge" style="background:rgba(245,158,11,.1);color:#fbbf24;border:1px solid rgba(245,158,11,.15)">4 &mdash; &#xCEE4;&#xBBA4;&#xB2C8;&#xD2F0;</span></div>
+  <div class="decision">use_community_report?</div>
+  <div class="card">
+    <div class="card-head"><span class="card-icon">&#x1F3D8;&#xFE0F;</span><span class="card-title">extract_community()</span></div>
+    <div class="card-desc">Leiden &#xC54C;&#xACE0;&#xB9AC;&#xC998; &rarr; LLM &#xBCF4;&#xACE0;&#xC11C; &rarr; <strong>ES &#xC800;&#xC7A5;</strong></div>
+  </div>
+  <div class="arrow">&#x25BC;</div>
+
+  <div class="badge-row"><span class="badge" style="background:rgba(139,92,246,.1);color:#a78bfa;border:1px solid rgba(139,92,246,.15)">&#xC644;&#xB8CC;</span></div>
+  <div class="card">
+    <div class="card-head"><span class="card-icon">&#x2705;</span><span class="card-title">Elasticsearch &#xC800;&#xC7A5;</span></div>
+    <div class="grid-result grid-r4">
+      <div class="ri"><div class="ic">&#x1F535;</div><div class="lb">entity</div></div>
+      <div class="ri"><div class="ic">&#x1F517;</div><div class="lb">relationship</div></div>
+      <div class="ri"><div class="ic">&#x1F4CB;</div><div class="lb">graph</div></div>
+      <div class="ri"><div class="ic">&#x1F4CA;</div><div class="lb">community</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- RIGHT: After -->
+<div>
+  <div class="col-label"><span class="col-badge" style="background:rgba(16,185,129,.12);color:#34d399;border:1px solid rgba(16,185,129,.25)">AFTER &mdash; Neo4j</span></div>
+
+  <div class="badge-row"><span class="badge" style="background:rgba(100,116,139,.1);color:#94a3b8;border:1px solid rgba(100,116,139,.15)">1 &mdash; &#xCD08;&#xAE30;&#xD654;</span></div>
+  <div class="card"><div class="card-head"><span class="card-icon">&#x1F680;</span><span class="card-title">run_kms_graph_svc(payload)</span></div><div class="card-desc">KB &#xC124;&#xC815; &#xAC80;&#xC99D; / entity_types &#xD655;&#xC778;</div></div>
+  <div class="arrow">&#x25BC;</div>
+
+  <div class="badge-row"><span class="badge" style="background:rgba(100,116,139,.1);color:#94a3b8;border:1px solid rgba(100,116,139,.15)">2 &mdash; &#xC11C;&#xBE0C;&#xADF8;&#xB798;&#xD504; &#xC218;&#xC9D1; <span class="tag keep">&#xBCC0;&#xACBD;&#xC5C6;&#xC74C;</span></span></div>
+  <div class="card"><div class="card-head"><span class="card-icon">&#x1F4C4;</span><span class="card-title">collect_subgraphs / GeneralKGExt</span></div><div class="card-desc">&#xBB38;&#xC11C; &#xC21C;&#xD68C; &rarr; LLM &#xCD94;&#xCD9C; &rarr; NetworkX &#xC11C;&#xBE0C;&#xADF8;&#xB798;&#xD504;</div></div>
+  <div class="arrow">&#x25BC;</div>
+
+  <div class="badge-row"><span class="badge" style="background:rgba(16,185,129,.1);color:#34d399;border:1px solid rgba(16,185,129,.15)">3 &mdash; Neo4j UPSERT <span class="tag new-tag">&#xC2E0;&#xADDC;</span></span></div>
+  <div class="card new">
+    <div class="card-head"><span class="card-icon">&#x1F4BE;</span><span class="card-title">upsert_subgraphs_to_neo4j()</span></div>
+    <div class="card-desc"><strong>&#xB2E8;&#xC77C; &#xD2B8;&#xB79C;&#xC7AD;&#xC158;</strong>&#xC73C;&#xB85C; &#xC5D4;&#xD2F0;&#xD2F0;/&#xAD00;&#xACC4; UPSERT</div>
+    <div class="highlight-row">
+      <span class="arrow-icon">&larr;</span>
+      <span class="text">&#xAE30;&#xC874; 5&#xB2E8;&#xACC4;(insert + get + merge + pagerank + save)&#xB97C; <strong>1&#xB2E8;&#xACC4;</strong>&#xB85C; &#xD1B5;&#xD569;</span>
+    </div>
+  </div>
+  <div class="arrow">&#x25BC;</div>
+
+  <div class="badge-row"><span class="badge" style="background:rgba(16,185,129,.1);color:#34d399;border:1px solid rgba(16,185,129,.15)">4 &mdash; PageRank <span class="tag new-tag">&#xC2E0;&#xADDC;</span></span></div>
+  <div class="card new">
+    <div class="card-head"><span class="card-icon">&#x1F4C8;</span><span class="card-title">calculate_pagerank_neo4j()</span></div>
+    <div class="grid2">
+      <div class="gc" style="border-color:rgba(16,185,129,.2)"><h4 style="color:#34d399">Option A &#xAD8C;&#xC7A5;</h4><p>Neo4j &rarr; NetworkX &rarr; pagerank &rarr; Neo4j &#xC5ED;&#xAE30;&#xB85D;</p></div>
+      <div class="gc" style="border-color:rgba(99,102,241,.2)"><h4 style="color:#818cf8">Option B</h4><p>GDS pagerank.write()</p></div>
+    </div>
+  </div>
+  <div class="arrow">&#x25BC;</div>
+
+  <div class="badge-row"><span class="badge" style="background:rgba(245,158,11,.1);color:#fbbf24;border:1px solid rgba(245,158,11,.15)">5 &mdash; &#xCEE4;&#xBBA4;&#xB2C8;&#xD2F0; <span class="tag partial">&#xBD80;&#xBD84;&#xBCC0;&#xACBD;</span></span></div>
+  <div class="decision">use_community_report?</div>
+  <div class="card" style="border-color:rgba(245,158,11,.15)">
+    <div class="card-head"><span class="card-icon">&#x1F3D8;&#xFE0F;</span><span class="card-title">extract_community_neo4j()</span></div>
+    <div class="card-desc">Leiden <span class="tag keep">&#xBCC0;&#xACBD;&#xC5C6;&#xC74C;</span> &rarr; community_id Neo4j &#xAE30;&#xB85D; <span class="tag changed">&#xBCC0;&#xACBD;</span><br>LLM &#xBCF4;&#xACE0;&#xC11C; <span class="tag keep">&#xBCC0;&#xACBD;&#xC5C6;&#xC74C;</span> &rarr; CommunityReport &#xB178;&#xB4DC; <span class="tag changed">&#xBCC0;&#xACBD;</span></div>
+  </div>
+  <div class="arrow">&#x25BC;</div>
+
+  <div class="badge-row"><span class="badge" style="background:rgba(139,92,246,.1);color:#a78bfa;border:1px solid rgba(139,92,246,.15)">&#xC644;&#xB8CC;</span></div>
+  <div class="card">
+    <div class="card-head"><span class="card-icon">&#x2705;</span><span class="card-title">Neo4j &#xC800;&#xC7A5;</span></div>
+    <div class="grid-result grid-r3">
+      <div class="ri"><div class="ic">&#x1F535;</div><div class="lb">:Entity</div><div class="sm">pagerank<br>community_id</div></div>
+      <div class="ri"><div class="ic">&#x1F517;</div><div class="lb">:RELATED_TO</div><div class="sm">weight<br>description</div></div>
+      <div class="ri"><div class="ic">&#x1F4CA;</div><div class="lb">:CommunityReport</div><div class="sm">content</div></div>
+    </div>
+  </div>
+</div>
+
+</div>
+</div>
+
+<!-- ==================== BEFORE VIEW ==================== -->
+<div class="view" id="view-before">
+<div class="single">
+  <div class="col-label"><span class="col-badge" style="background:rgba(59,130,246,.12);color:#60a5fa;border:1px solid rgba(59,130,246,.25)">BEFORE &mdash; Elasticsearch</span></div>
+
+  <div class="badge-row"><span class="badge" style="background:rgba(59,130,246,.1);color:#60a5fa;border:1px solid rgba(59,130,246,.15)">1 &mdash; &#xCD08;&#xAE30;&#xD654;</span></div>
+  <div class="card"><div class="card-head"><span class="card-icon">&#x1F680;</span><span class="card-title">run_kms_graph_svc(payload)</span></div><div class="card-file" style="font-size:10.5px;color:#4e5d7a;font-family:monospace;margin-bottom:6px">graph_service.py</div><div class="card-desc">KB &#xC124;&#xC815; &#xAC80;&#xC99D; / entity_types &#xD655;&#xC778;</div></div>
+  <div class="arrow">&#x25BC;</div>
+
+  <div class="badge-row"><span class="badge" style="background:rgba(6,182,212,.1);color:#22d3ee;border:1px solid rgba(6,182,212,.15)">2 &mdash; &#xC11C;&#xBE0C;&#xADF8;&#xB798;&#xD504; &#xC218;&#xC9D1;</span></div>
+  <div class="card"><div class="card-head"><span class="card-icon">&#x1F4C4;</span><span class="card-title">collect_subgraphs(kb_obj)</span></div>
+    <div class="card-desc">&#xBB38;&#xC11C; &#xC21C;&#xD68C; &rarr; GeneralKGExt LLM &#xCD94;&#xCD9C; &rarr; NetworkX &#xC11C;&#xBE0C;&#xADF8;&#xB798;&#xD504;</div>
+    <div class="steps">
+      <div class="step"><div class="sn" style="background:#06b6d4">1</div><div class="st"><strong>GeneralKGExt.__call__()</strong> &mdash; &#xC5D4;&#xD2F0;&#xD2F0;/&#xAD00;&#xACC4; &#xCD94;&#xCD9C;</div></div>
+      <div class="step"><div class="sn" style="background:#06b6d4">2</div><div class="st"><strong>NetworkX &#xC11C;&#xBE0C;&#xADF8;&#xB798;&#xD504;</strong> &mdash; in-memory</div></div>
+    </div>
+  </div>
+  <div class="arrow">&#x25BC;</div>
+
+  <div class="badge-row"><span class="badge" style="background:rgba(16,185,129,.1);color:#34d399;border:1px solid rgba(16,185,129,.15)">3 &mdash; &#xBCD1;&#xD569; &amp; &#xC800;&#xC7A5;</span></div>
+  <div class="card"><div class="card-head"><span class="card-icon">&#x1F500;</span><span class="card-title">merge_subgraphs_batch(kb_id)</span></div>
+    <div class="steps">
+      <div class="step"><div class="sn" style="background:#10b981">1</div><div class="st"><strong>insert_subgraphs_batch()</strong> &mdash; DB &#xBC31;&#xC5C5;</div></div>
+      <div class="step"><div class="sn" style="background:#10b981">2</div><div class="st"><strong>get_graph()</strong> &mdash; ES&#xC5D0;&#xC11C; &#xAE00;&#xB85C;&#xBC8C; &#xADF8;&#xB798;&#xD504; &#xB85C;&#xB4DC;</div></div>
+      <div class="step"><div class="sn" style="background:#10b981">3</div><div class="st"><strong>graph_merge()</strong> &mdash; &#xC21C;&#xCC28; &#xBCD1;&#xD569;</div></div>
+      <div class="step"><div class="sn" style="background:#10b981">4</div><div class="st"><strong>nx.pagerank()</strong> &mdash; &#xC911;&#xC2EC;&#xC131; &#xC810;&#xC218;</div></div>
+      <div class="step"><div class="sn" style="background:#10b981">5</div><div class="st"><strong>insert_global_graph()</strong> &mdash; ES &#xC800;&#xC7A5;</div></div>
+    </div>
+  </div>
+  <div class="arrow">&#x25BC;</div>
+
+  <div class="badge-row"><span class="badge" style="background:rgba(245,158,11,.1);color:#fbbf24;border:1px solid rgba(245,158,11,.15)">4 &mdash; &#xCEE4;&#xBBA4;&#xB2C8;&#xD2F0; &#xBD84;&#xC11D;</span></div>
+  <div class="decision">use_community_report?</div>
+  <div class="card"><div class="card-head"><span class="card-icon">&#x1F3D8;&#xFE0F;</span><span class="card-title">extract_community()</span></div>
+    <div class="card-desc">Leiden &#xC54C;&#xACE0;&#xB9AC;&#xC998; &rarr; LLM &#xBCF4;&#xACE0;&#xC11C; &#xC0DD;&#xC131; &rarr; ES &#xC800;&#xC7A5;</div></div>
+  <div class="arrow">&#x25BC;</div>
+
+  <div class="badge-row"><span class="badge" style="background:rgba(139,92,246,.1);color:#a78bfa;border:1px solid rgba(139,92,246,.15)">&#xC644;&#xB8CC; &mdash; Elasticsearch</span></div>
+  <div class="card"><div class="card-head"><span class="card-icon">&#x2705;</span><span class="card-title">&#xC644;&#xC131;&#xB41C; &#xC9C0;&#xC2DD; &#xADF8;&#xB798;&#xD504;</span></div>
+    <div class="grid-result grid-r4">
+      <div class="ri"><div class="ic">&#x1F535;</div><div class="lb">entity</div><div class="sm">&#xB178;&#xB4DC;</div></div>
+      <div class="ri"><div class="ic">&#x1F517;</div><div class="lb">relationship</div><div class="sm">&#xC5E3;&#xC9C0;</div></div>
+      <div class="ri"><div class="ic">&#x1F4CB;</div><div class="lb">graph</div><div class="sm">&#xBA54;&#xD0C0;</div></div>
+      <div class="ri"><div class="ic">&#x1F4CA;</div><div class="lb">community</div><div class="sm">&#xC694;&#xC57D;</div></div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ==================== AFTER VIEW ==================== -->
+<div class="view" id="view-after">
+<div class="single">
+  <div class="col-label"><span class="col-badge" style="background:rgba(16,185,129,.12);color:#34d399;border:1px solid rgba(16,185,129,.25)">AFTER &mdash; Neo4j</span></div>
+
+  <div class="badge-row"><span class="badge" style="background:rgba(59,130,246,.1);color:#60a5fa;border:1px solid rgba(59,130,246,.15)">1 &mdash; &#xCD08;&#xAE30;&#xD654;</span></div>
+  <div class="card"><div class="card-head"><span class="card-icon">&#x1F680;</span><span class="card-title">run_kms_graph_svc(payload)</span></div><div class="card-desc">KB &#xC124;&#xC815; &#xAC80;&#xC99D; / entity_types &#xD655;&#xC778;</div></div>
+  <div class="arrow">&#x25BC;</div>
+
+  <div class="badge-row"><span class="badge" style="background:rgba(100,116,139,.1);color:#94a3b8;border:1px solid rgba(100,116,139,.15)">2 &mdash; &#xC11C;&#xBE0C;&#xADF8;&#xB798;&#xD504; &#xC218;&#xC9D1; <span class="tag keep">&#xBCC0;&#xACBD;&#xC5C6;&#xC74C;</span></span></div>
+  <div class="card"><div class="card-head"><span class="card-icon">&#x1F4C4;</span><span class="card-title">collect_subgraphs / GeneralKGExt</span></div>
+    <div class="card-desc">&#xBB38;&#xC11C; &#xC21C;&#xD68C; &rarr; LLM &#xCD94;&#xCD9C; &rarr; NetworkX &#xC11C;&#xBE0C;&#xADF8;&#xB798;&#xD504;</div></div>
+  <div class="arrow">&#x25BC;</div>
+
+  <div class="badge-row"><span class="badge" style="background:rgba(16,185,129,.1);color:#34d399;border:1px solid rgba(16,185,129,.15)">3 &mdash; Neo4j UPSERT <span class="tag new-tag">&#xC2E0;&#xADDC;</span></span></div>
+  <div class="card new">
+    <div class="card-head"><span class="card-icon">&#x1F4BE;</span><span class="card-title">upsert_subgraphs_to_neo4j()</span></div>
+    <div class="card-desc">AsyncSession&#xC73C;&#xB85C; &#xC5D4;&#xD2F0;&#xD2F0;/&#xAD00;&#xACC4; &#xC77C;&#xAD04; UPSERT</div>
+    <div class="cypher">-- &#xC5D4;&#xD2F0;&#xD2F0;
+UNWIND $entities AS e
+MERGE (n:Entity {name: e.name, kb_id: $kb_id})
+ON CREATE SET n += e.properties
+ON MATCH SET n.description += '&lt;SEP&gt;' + e.description
+
+-- &#xAD00;&#xACC4;
+MERGE (from)-[rel:RELATED_TO]->(to)
+ON MATCH SET rel.weight += r.weight</div>
+    <div class="note">&#x2757; &#xAE30;&#xC874; insert_subgraphs_batch + merge_subgraphs_batch + get_graph + insert_global_graph &#xBAA8;&#xB450; &#xB300;&#xCCB4;</div>
+  </div>
+  <div class="arrow">&#x25BC;</div>
+
+  <div class="badge-row"><span class="badge" style="background:rgba(16,185,129,.1);color:#34d399;border:1px solid rgba(16,185,129,.15)">4 &mdash; PageRank <span class="tag new-tag">&#xC2E0;&#xADDC;</span></span></div>
+  <div class="card new">
+    <div class="card-head"><span class="card-icon">&#x1F4C8;</span><span class="card-title">calculate_pagerank_neo4j()</span></div>
+    <div class="grid2">
+      <div class="gc" style="border-color:rgba(16,185,129,.2)"><h4 style="color:#34d399">Option A &#xAD8C;&#xC7A5;</h4><p>Neo4j &rarr; nx.pagerank() &rarr; Neo4j &#xC5ED;&#xAE30;&#xB85D;</p></div>
+      <div class="gc" style="border-color:rgba(99,102,241,.2)"><h4 style="color:#818cf8">Option B</h4><p>GDS pagerank.write()</p></div>
+    </div>
+    <div class="cypher">UNWIND $scores AS s
+MATCH (n:Entity {name: s.name, kb_id: $kb_id})
+SET n.pagerank = s.score</div>
+  </div>
+  <div class="arrow">&#x25BC;</div>
+
+  <div class="badge-row"><span class="badge" style="background:rgba(245,158,11,.1);color:#fbbf24;border:1px solid rgba(245,158,11,.15)">5 &mdash; &#xCEE4;&#xBBA4;&#xB2C8;&#xD2F0; <span class="tag partial">&#xBD80;&#xBD84;&#xBCC0;&#xACBD;</span></span></div>
+  <div class="decision">use_community_report?</div>
+  <div class="card" style="border-color:rgba(245,158,11,.15)">
+    <div class="card-head"><span class="card-icon">&#x1F3D8;&#xFE0F;</span><span class="card-title">extract_community_neo4j()</span></div>
+    <div class="steps">
+      <div class="step"><div class="sn" style="background:#f59e0b">1</div><div class="st">Neo4j &rarr; NetworkX &#xB85C;&#xB4DC;</div></div>
+      <div class="step"><div class="sn" style="background:#475569">2</div><div class="st">Leiden &#xC54C;&#xACE0;&#xB9AC;&#xC998; <span class="tag keep">&#xBCC0;&#xACBD;&#xC5C6;&#xC74C;</span></div></div>
+      <div class="step"><div class="sn" style="background:#ef4444">3</div><div class="st">community_id Neo4j &#xAE30;&#xB85D; <span class="tag changed">&#xBCC0;&#xACBD;</span></div></div>
+      <div class="step"><div class="sn" style="background:#475569">4</div><div class="st">LLM &#xBCF4;&#xACE0;&#xC11C; <span class="tag keep">&#xBCC0;&#xACBD;&#xC5C6;&#xC74C;</span></div></div>
+      <div class="step"><div class="sn" style="background:#ef4444">5</div><div class="st">CommunityReport &#xB178;&#xB4DC; Neo4j &#xC800;&#xC7A5; <span class="tag changed">&#xBCC0;&#xACBD;</span></div></div>
+    </div>
+    <div class="cypher">CREATE (:CommunityReport {
+  kb_id, community_id, content, entities
+})</div>
+  </div>
+  <div class="arrow">&#x25BC;</div>
+
+  <div class="badge-row"><span class="badge" style="background:rgba(139,92,246,.1);color:#a78bfa;border:1px solid rgba(139,92,246,.15)">&#xC644;&#xB8CC; &mdash; Neo4j</span></div>
+  <div class="card"><div class="card-head"><span class="card-icon">&#x2705;</span><span class="card-title">&#xC644;&#xC131;&#xB41C; &#xC9C0;&#xC2DD; &#xADF8;&#xB798;&#xD504;</span></div>
+    <div class="grid-result grid-r3">
+      <div class="ri"><div class="ic">&#x1F535;</div><div class="lb">:Entity</div><div class="sm">name / type / description<br>pagerank / community_id<br>embedding / source_id / kb_id</div></div>
+      <div class="ri"><div class="ic">&#x1F517;</div><div class="lb">:RELATED_TO</div><div class="sm">description / weight<br>keywords / source_id</div></div>
+      <div class="ri"><div class="ic">&#x1F4CA;</div><div class="lb">:CommunityReport</div><div class="sm">community_id / content</div></div>
+    </div>
+  </div>
+</div>
+</div>
+
+<script>
+function switchView(view) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(t => {
+    t.classList.remove('active','active-compare');
+  });
+  document.getElementById('view-' + view).classList.add('active');
+  var btn = document.getElementById('tab-' + view);
+  btn.classList.add(view === 'compare' ? 'active-compare' : 'active');
+}
+</script>
+</body>
+</html>
