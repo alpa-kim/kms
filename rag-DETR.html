@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BEFORE — Text-based RAG</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',-apple-system,sans-serif;background:#0b1120;color:#c9d1e0;min-height:100vh;padding-bottom:48px}
+.header{text-align:center;padding:32px 16px 20px}
+.header h1{font-size:21px;color:#fff;letter-spacing:-0.5px}
+.header p{font-size:12px;color:#4e5d7a;margin-top:4px}
+.col-label{text-align:center;margin-bottom:18px}
+.col-badge{display:inline-block;font-size:11px;font-weight:700;padding:6px 20px;border-radius:20px;letter-spacing:.6px;background:rgba(59,130,246,.12);color:#60a5fa;border:1px solid rgba(59,130,246,.25)}
+.wrap{max-width:700px;margin:0 auto;padding:0 16px}
+.arrow{text-align:center;padding:4px 0;font-size:15px;color:#2a3550}
+.badge-row{text-align:center;margin-bottom:5px}
+.badge{display:inline-block;font-size:8.5px;font-weight:700;letter-spacing:1.1px;text-transform:uppercase;padding:3px 11px;border-radius:14px}
+.card{background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);border-radius:11px;padding:14px 16px;margin-bottom:4px;transition:all .25s}
+.card:hover{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.14)}
+.card-head{display:flex;align-items:center;gap:6px;margin-bottom:4px}
+.card-icon{font-size:14px}
+.card-title{font-size:12px;font-weight:700;color:#fff}
+.card-file{font-size:9.5px;color:#4e5d7a;font-family:'SF Mono','Fira Code',monospace;margin-bottom:5px}
+.card-desc{font-size:11px;color:#8a9ab5;line-height:1.55}
+.card-desc strong{color:#d0d8e8;font-weight:600}
+.steps{display:flex;flex-direction:column;gap:4px;margin-top:8px}
+.step{display:flex;gap:8px;padding:7px 10px;background:rgba(255,255,255,.02);border-radius:7px;border:1px solid rgba(255,255,255,.03)}
+.sn{width:17px;height:17px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:8.5px;font-weight:700;color:#fff;flex-shrink:0;margin-top:1px}
+.st{font-size:10.5px;color:#9aabbd;line-height:1.5}
+.st strong{color:#d0d8e8;font-weight:600}
+.tag{display:inline-block;font-size:8.5px;font-weight:600;padding:1.5px 6px;border-radius:3px;margin:0 1px}
+.tag.cfg{background:rgba(245,158,11,.12);color:#fbbf24}
+.tag.par{background:rgba(59,130,246,.15);color:#60a5fa}
+.tag.scan{background:rgba(239,68,68,.12);color:#f87171}
+.tag.common{background:rgba(16,185,129,.12);color:#34d399}
+.tag.new-t{background:rgba(16,185,129,.12);color:#34d399}
+.llm{display:inline-block;font-size:8.5px;font-weight:700;padding:2px 6px;border-radius:4px;background:rgba(239,68,68,.14);color:#f87171;border:1px solid rgba(239,68,68,.2);margin-right:2px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:7px}
+.gc{padding:9px;border-radius:8px;border:1px solid rgba(255,255,255,.05);background:rgba(255,255,255,.02)}
+.gc h4{font-size:10px;font-weight:700;margin-bottom:3px}
+.gc p{font-size:9.5px;color:#7a8ba0;line-height:1.4;margin:0}
+.decision{text-align:center;padding:9px;max-width:260px;margin:0 auto 7px;background:rgba(245,158,11,.07);border:1px dashed rgba(245,158,11,.22);border-radius:9px;font-size:11px;font-weight:600;color:#fbbf24}
+.sf{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:7px}
+.sf-box{padding:9px;border-radius:7px}
+.sf-box.ok{background:rgba(16,185,129,.04);border:1px solid rgba(16,185,129,.12)}
+.sf-box.fail{background:rgba(239,68,68,.03);border:1px solid rgba(239,68,68,.1)}
+.sf-box h4{font-size:10px;font-weight:700;margin-bottom:2px}
+.sf-box p{font-size:9.5px;line-height:1.35;margin:0}
+
+/* ── PDF 상세 처리 전용 ── */
+.pdf-block{border:1px solid rgba(6,182,212,.18);border-radius:12px;background:rgba(6,182,212,.025);padding:14px 14px 10px;margin-bottom:4px}
+.pdf-block-title{display:flex;align-items:center;gap:6px;margin-bottom:10px}
+.pdf-block-title .icon{font-size:13px}
+.pdf-block-title .txt{font-size:11.5px;font-weight:700;color:#22d3ee}
+.pdf-block-title .sub{font-size:9.5px;color:#4e5d7a;margin-left:4px}
+.pdf-steps{display:flex;flex-direction:column;gap:5px}
+.pdf-step{display:flex;gap:9px;padding:8px 10px;border-radius:8px;border:1px solid rgba(255,255,255,.04);background:rgba(255,255,255,.018)}
+.pdf-step .ps-num{width:18px;height:18px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;color:#fff;flex-shrink:0;margin-top:1px}
+.pdf-step .ps-body{flex:1;min-width:0}
+.pdf-step .ps-title{font-size:10.5px;font-weight:700;color:#e2e8f0;margin-bottom:2px}
+.pdf-step .ps-desc{font-size:9.5px;color:#8a9ab5;line-height:1.5}
+.pdf-step .ps-desc strong{color:#c9d1e0}
+.branch-row{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:5px}
+.branch-box{padding:8px 10px;border-radius:7px}
+.branch-box.scan{background:rgba(239,68,68,.04);border:1px solid rgba(239,68,68,.12)}
+.branch-box.common{background:rgba(16,185,129,.04);border:1px solid rgba(16,185,129,.12)}
+.branch-box h5{font-size:9.5px;font-weight:700;margin-bottom:4px}
+.branch-box ul{padding-left:0;list-style:none;display:flex;flex-direction:column;gap:3px}
+.branch-box ul li{font-size:9px;color:#8a9ab5;padding:3px 7px;background:rgba(255,255,255,.02);border-radius:4px;line-height:1.4}
+.branch-box ul li::before{content:"›";margin-right:4px;font-weight:700}
+.save-row{display:flex;gap:5px;margin-top:8px;flex-wrap:wrap}
+.save-pill{font-size:8.5px;font-weight:600;padding:3px 9px;border-radius:12px;display:flex;align-items:center;gap:4px}
+.save-pill.img{background:rgba(99,102,241,.1);color:#a5b4fc;border:1px solid rgba(99,102,241,.18)}
+.save-pill.json{background:rgba(245,158,11,.1);color:#fbbf24;border:1px solid rgba(245,158,11,.18)}
+.save-pill.mf{background:rgba(139,92,246,.1);color:#c4b5fd;border:1px solid rgba(139,92,246,.18)}
+.iou-note{margin-top:5px;padding:5px 9px;border-radius:5px;background:rgba(245,158,11,.05);border:1px solid rgba(245,158,11,.1);font-size:9px;color:#fbbf24}
+@media(max-width:520px){.grid2,.sf,.branch-row{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>RAG Pipeline</h1>
+  <p>Text-based RAG — Indexing Flow</p>
+</div>
+
+<div class="wrap">
+  <div class="col-label">
+    <span class="col-badge">BEFORE &mdash; Text-based RAG</span>
+  </div>
+
+  <!-- 1 -->
+  <div class="badge-row"><span class="badge" style="background:rgba(59,130,246,.12);color:#60a5fa;border:1px solid rgba(59,130,246,.2)">1 &mdash; 진입점</span></div>
+  <div class="card">
+    <div class="card-head"><span class="card-icon">🚀</span><span class="card-title">POST /runDocument</span></div>
+    <div class="card-file">kms_endpoint.py:255</div>
+    <div class="card-desc"><strong>parsingService.run_document_rag(doc_id)</strong><br>DB 조회 → MinIO 파일 로드 → process_begin_at 설정</div>
+  </div>
+  <div class="arrow">▼</div>
+
+  <!-- 2 -->
+  <div class="badge-row"><span class="badge" style="background:rgba(168,85,247,.12);color:#c084fc;border:1px solid rgba(168,85,247,.2)">2 &mdash; 파서 분기</span></div>
+  <div class="card">
+    <div class="card-head"><span class="card-icon">🔀</span><span class="card-title">parser_id 분기 (CHUNKER_MAP)</span></div>
+    <div class="grid2">
+      <div class="gc" style="border-color:rgba(59,130,246,.12)"><h4 style="color:#60a5fa">"general"</h4><p>파일 타입 감지</p></div>
+      <div class="gc" style="border-color:rgba(245,158,11,.12)"><h4 style="color:#fbbf24">"qna"</h4><p>Excel Q&A 쌍 추출</p></div>
+    </div>
+  </div>
+  <div class="arrow">▼</div>
+
+  <!-- 3 -->
+  <div class="badge-row"><span class="badge" style="background:rgba(6,182,212,.12);color:#22d3ee;border:1px solid rgba(6,182,212,.2)">3 &mdash; 파일 파싱</span></div>
+  <div class="card">
+    <div class="card-head"><span class="card-icon">📂</span><span class="card-title">파일 타입별 파서</span></div>
+    <div class="grid2">
+      <div class="gc" style="border-color:rgba(239,68,68,.12)"><h4 style="color:#f87171">PDF — VisionParser</h4><p>텍스트/테이블/이미지 추출</p></div>
+      <div class="gc" style="border-color:rgba(16,185,129,.12)"><h4 style="color:#34d399">Excel — RAGExcelParser</h4><p>행/셀 추출</p></div>
+    </div>
+  </div>
+  <div class="arrow">▼</div>
+
+  <!-- 3-1: PDF 상세 처리 (신규) -->
+  <div class="badge-row">
+    <span class="badge" style="background:rgba(6,182,212,.1);color:#22d3ee;border:1px solid rgba(6,182,212,.2)">3-1 &mdash; PDF 상세 처리</span>
+    &nbsp;<span class="badge" style="background:rgba(16,185,129,.1);color:#34d399;border:1px solid rgba(16,185,129,.18)">PDF only</span>
+  </div>
+  <div class="pdf-block">
+    <div class="pdf-block-title">
+      <span class="icon">📄</span>
+      <span class="txt">PDF 입력 처리 파이프라인</span>
+      <span class="sub">페이지 이미지화 → 판별 → 표/차트 추출</span>
+    </div>
+    <div class="pdf-steps">
+
+      <!-- step 1: pdf2image -->
+      <div class="pdf-step">
+        <div class="ps-num" style="background:#0891b2">1</div>
+        <div class="ps-body">
+          <div class="ps-title">pdf2image — 페이지 이미지 렌더링</div>
+          <div class="ps-desc">PDF 전체 페이지를 고해상도 이미지로 변환. 이후 모든 처리의 입력 소스로 사용.</div>
+        </div>
+      </div>
+
+      <!-- step 2: pdfplumber 판별 -->
+      <div class="pdf-step">
+        <div class="ps-num" style="background:#0e7490">2</div>
+        <div class="ps-body">
+          <div class="ps-title">pdfplumber — 텍스트 양 체크 → 자동 판별</div>
+          <div class="ps-desc">추출된 텍스트 밀도를 기준으로 문서 유형 자동 분류.</div>
+          <div class="branch-row" style="margin-top:6px">
+            <div class="branch-box scan">
+              <h5 style="color:#f87171">🖨 스캔본</h5>
+              <ul>
+                <li>텍스트 레이어 없음 / 희박</li>
+                <li>Table Transformer(DETR) 경로</li>
+              </ul>
+            </div>
+            <div class="branch-box common">
+              <h5 style="color:#34d399">📝 네이티브</h5>
+              <ul>
+                <li>텍스트 레이어 정상</li>
+                <li>공통 처리 경로로 진행</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- step 3: Table Transformer (스캔본) -->
+      <div class="pdf-step">
+        <div class="ps-num" style="background:#b45309">3</div>
+        <div class="ps-body">
+          <div class="ps-title"><span class="tag scan">스캔본</span> Table Transformer (DETR) → bbox → 이미지 크롭</div>
+          <div class="ps-desc">
+            <strong>DETR 기반 Table Transformer</strong>로 표 영역 bbox 좌표 검출 →
+            페이지 이미지에서 해당 영역 크롭.
+          </div>
+        </div>
+      </div>
+
+      <!-- step 4: Qwen VLM 차트/그래프 탐지 (공통) -->
+      <div class="pdf-step">
+        <div class="ps-num" style="background:#059669">4</div>
+        <div class="ps-body">
+          <div class="ps-title"><span class="tag common">공통</span> Qwen VLM — 차트/그래프 영역 탐지</div>
+          <div class="ps-desc">
+            VLM으로 차트·그래프 bbox 검출.
+          </div>
+          <div class="iou-note">🔁 표 영역(bbox)과 IoU 비교 → 중복 제거 (표 우선 유지)</div>
+        </div>
+      </div>
+
+      <!-- step 5: 표 크롭 → Qwen 설명 생성 (공통) -->
+      <div class="pdf-step">
+        <div class="ps-num" style="background:#059669">5</div>
+        <div class="ps-body">
+          <div class="ps-title"><span class="tag common">공통</span> 표 크롭 이미지 → Qwen 설명 생성</div>
+          <div class="ps-desc">
+            크롭된 표 이미지를 <strong>Qwen VLM</strong>에 재입력 →
+            자연어 설명(caption) 생성.
+          </div>
+        </div>
+      </div>
+
+      <!-- step 6: 저장 -->
+      <div class="pdf-step">
+        <div class="ps-num" style="background:#7c3aed">6</div>
+        <div class="ps-body">
+          <div class="ps-title">저장 — 크롭 결과물 출력</div>
+          <div class="ps-desc">추출된 영역별 이미지와 메타데이터를 파일로 저장.</div>
+          <div class="save-row">
+            <span class="save-pill img">🖼 크롭 이미지 (.png)</span>
+            <span class="save-pill json">📄 메타데이터 (.json)</span>
+            <span class="save-pill mf">📋 manifest.json</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+  <div class="arrow">▼</div>
+
+  <!-- 4 -->
+  <div class="badge-row"><span class="badge" style="background:rgba(245,158,11,.12);color:#fbbf24;border:1px solid rgba(245,158,11,.2)">4 &mdash; 청킹</span></div>
+  <div class="card">
+    <div class="card-head"><span class="card-icon">✂️</span><span class="card-title">chunk_split / chunk_split_with_images</span></div>
+    <div class="steps">
+      <div class="step"><div class="sn" style="background:#f59e0b">1</div><div class="st">문장 단위 분리 <span class="tag cfg">.?!;\n</span></div></div>
+      <div class="step"><div class="sn" style="background:#f59e0b">2</div><div class="st">슬라이딩 윈도우 <span class="tag cfg">chunk_token=300</span> <span class="tag cfg">overlap=50</span></div></div>
+      <div class="step"><div class="sn" style="background:#f59e0b">3</div><div class="st">테이블 블록 보존 (PDF)</div></div>
+      <div class="step"><div class="sn" style="background:#f59e0b">4</div><div class="st">이미지-청크 매핑 (PDF)</div></div>
+    </div>
+  </div>
+  <div class="arrow">▼</div>
+
+  <!-- 5 -->
+  <div class="badge-row"><span class="badge" style="background:rgba(99,102,241,.12);color:#818cf8;border:1px solid rgba(99,102,241,.2)">5 &mdash; 토큰나이즈</span></div>
+  <div class="card">
+    <div class="card-head"><span class="card-icon">🔠</span><span class="card-title">tokenize_chunks()</span></div>
+    <div class="card-desc">content_ltks &middot; content_sm_ltks &middot; title_tks &middot; position_int</div>
+  </div>
+  <div class="arrow">▼</div>
+
+  <!-- 6 -->
+  <div class="badge-row"><span class="badge" style="background:rgba(100,116,139,.12);color:#94a3b8;border:1px solid rgba(100,116,139,.2)">6 &mdash; 이미지 업로드</span></div>
+  <div class="decision">이미지 존재?</div>
+  <div class="card">
+    <div class="card-head"><span class="card-icon">🖼️</span><span class="card-title">MinIO 이미지 업로드</span></div>
+    <div class="card-desc">{kb}/img/{hash} <span class="tag par">asyncio.gather</span></div>
+  </div>
+  <div class="arrow">▼</div>
+
+  <!-- 7 -->
+  <div class="badge-row"><span class="badge" style="background:rgba(239,68,68,.12);color:#f87171;border:1px solid rgba(239,68,68,.2)">7 &mdash; LLM 부가 처리</span></div>
+  <div class="card">
+    <div class="card-head"><span class="card-icon">🧠</span><span class="card-title">LLM 키워드 / 질문 추출</span></div>
+    <div class="grid2">
+      <div class="gc" style="border-color:rgba(239,68,68,.12)"><h4 style="color:#f87171">important_kwd</h4><p><span class="llm">LLM</span> keyword_extraction</p></div>
+      <div class="gc" style="border-color:rgba(239,68,68,.12)"><h4 style="color:#f87171">question_kwd</h4><p><span class="llm">LLM</span> question_proposal</p></div>
+    </div>
+  </div>
+  <div class="arrow">▼</div>
+
+  <!-- 8 -->
+  <div class="badge-row"><span class="badge" style="background:rgba(16,185,129,.12);color:#34d399;border:1px solid rgba(16,185,129,.2)">8 &mdash; 임베딩</span></div>
+  <div class="card">
+    <div class="card-head"><span class="card-icon">🧭</span><span class="card-title">embedding(docs, app, llm)</span></div>
+    <div class="card-file">embedding_service.py:435</div>
+    <div class="card-desc">텍스트 → <strong>1024d 단일 벡터</strong></div>
+    <div class="grid2">
+      <div class="gc"><h4 style="color:#fbbf24">Ollama</h4><p>batch=32, concurrency=4, HF tokenizer</p></div>
+      <div class="gc"><h4 style="color:#34d399">OpenAI</h4><p>batch=64, truncate 8191 tokens</p></div>
+    </div>
+  </div>
+  <div class="arrow">▼</div>
+
+  <!-- 9 -->
+  <div class="badge-row"><span class="badge" style="background:rgba(59,130,246,.12);color:#60a5fa;border:1px solid rgba(59,130,246,.2)">9 &mdash; 인덱싱 &amp; 검색</span></div>
+  <div class="card">
+    <div class="card-head"><span class="card-icon">💾</span><span class="card-title">ES 벌크 인서트 + Hybrid Search</span></div>
+    <div class="card-desc">q_1024_vec → <strong>Dense(cosine) + BM25</strong> → Fusion Ranking</div>
+    <div class="sf">
+      <div class="sf-box ok"><h4 style="color:#34d399">✅ 성공</h4><p style="color:#6ee7b7">parsing_status=1</p></div>
+      <div class="sf-box fail"><h4 style="color:#f87171">❌ 실패</h4><p style="color:#fca5a5">롤백 + 에러 상태</p></div>
+    </div>
+  </div>
+  <div class="arrow">▼</div>
+
+  <!-- 완료 -->
+  <div class="badge-row"><span class="badge" style="background:rgba(139,92,246,.12);color:#a78bfa;border:1px solid rgba(139,92,246,.2)">완료</span></div>
+  <div class="card">
+    <div class="card-head"><span class="card-icon">✅</span><span class="card-title">Fusion Ranking 결과</span></div>
+    <div class="card-desc">ranked chunks + pre-signed img URLs</div>
+  </div>
+</div>
+
+</body>
+</html>
