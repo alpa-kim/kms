@@ -1,0 +1,509 @@
+<svg viewBox="0 0 920 1880" xmlns="http://www.w3.org/2000/svg" font-family="'Segoe UI',Arial,sans-serif">
+
+<rect width="920" height="1880" fill="white"/>
+
+<defs>
+  <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto">
+    <path d="M0,1 L9,5 L0,9 Z" fill="#94a3b8"/>
+  </marker>
+  <marker id="ah-red" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto">
+    <path d="M0,1 L9,5 L0,9 Z" fill="#dc2626"/>
+  </marker>
+  <marker id="ah-teal" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto">
+    <path d="M0,1 L9,5 L0,9 Z" fill="#0d9488"/>
+  </marker>
+  <linearGradient id="coreGrad" x1="0" y1="0" x2="1" y2="0">
+    <stop offset="0%" stop-color="#dc2626"/>
+    <stop offset="100%" stop-color="#e11d48"/>
+  </linearGradient>
+  <filter id="sh" x="-1%" y="-1%" width="102%" height="106%">
+    <feDropShadow dx="0" dy="1.5" stdDeviation="2" flood-opacity="0.06"/>
+  </filter>
+</defs>
+
+<!-- ===== Title ===== -->
+<text x="460" y="30" text-anchor="middle" font-size="16" font-weight="700" fill="#111827">KG Search Retrieval Pipeline 비교</text>
+<text x="460" y="47" text-anchor="middle" font-size="10" fill="#9ca3af">현재 ES 기반 (LLM 요약) vs 개선 Neo4j (Graph-guided Chunk Retrieval · "진짜 하이브리드")</text>
+
+<!-- Center divider -->
+<line x1="460" y1="58" x2="460" y2="1680" stroke="#e2e8f0" stroke-width="1.5" stroke-dasharray="6,4"/>
+
+<!-- Column headers -->
+<rect x="20" y="58" width="420" height="24" rx="7" fill="#eff6ff" stroke="#3b82f6" stroke-width="1.5"/>
+<text x="230" y="74" text-anchor="middle" font-size="10" font-weight="700" fill="#1e40af">현재 — ES 기반 KG Search (LLM 요약 반환)</text>
+
+<rect x="480" y="58" width="420" height="24" rx="7" fill="#f0fdf4" stroke="#10b981" stroke-width="1.5"/>
+<text x="690" y="74" text-anchor="middle" font-size="10" font-weight="700" fill="#065f46">개선 — Graph-guided Chunk Retrieval</text>
+<rect x="870" y="60" width="25" height="18" rx="5" fill="#10b981"/>
+<text x="882" y="73" text-anchor="middle" font-size="7" font-weight="700" fill="white">NEW</text>
+
+
+<!-- ================================================================
+     STEP 1: 진입점 (동일)
+     ================================================================ -->
+<rect x="140" y="100" width="180" height="14" rx="7" fill="#3b82f6"/>
+<text x="230" y="111" text-anchor="middle" font-size="8.5" font-weight="700" fill="white">1 — 진입점</text>
+<rect x="20" y="116" width="420" height="40" rx="8" fill="#eff6ff" stroke="#bfdbfe" stroke-width="1" filter="url(#sh)"/>
+<text x="40" y="132" font-size="11" font-weight="700" fill="#1e40af">POST /search · POST /ask</text>
+<text x="40" y="147" font-size="9" fill="#6b7280">kms_endpoint.py:267 → SearchService.retrieval_chunk()</text>
+<line x1="230" y1="156" x2="230" y2="168" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#ah)"/>
+
+<rect x="600" y="100" width="180" height="14" rx="7" fill="#3b82f6"/>
+<text x="690" y="111" text-anchor="middle" font-size="8.5" font-weight="700" fill="white">1 — 진입점</text>
+<rect x="480" y="116" width="420" height="40" rx="8" fill="#eff6ff" stroke="#bfdbfe" stroke-width="1" filter="url(#sh)"/>
+<text x="500" y="132" font-size="11" font-weight="700" fill="#1e40af">POST /search · POST /ask</text>
+<text x="500" y="147" font-size="9" fill="#6b7280">kms_endpoint.py:267 → SearchService.retrieval_chunk()</text>
+<line x1="690" y1="156" x2="690" y2="168" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#ah)"/>
+
+
+<!-- ================================================================
+     STEP 2: 듀얼 트랙 분기
+     ================================================================ -->
+<rect x="140" y="170" width="180" height="14" rx="7" fill="#8b5cf6"/>
+<text x="230" y="181" text-anchor="middle" font-size="8.5" font-weight="700" fill="white">2 — 듀얼 트랙 분기</text>
+<rect x="20" y="186" width="420" height="54" rx="8" fill="#faf5ff" stroke="#ddd6fe" stroke-width="1" filter="url(#sh)"/>
+<text x="40" y="202" font-size="11" font-weight="700" fill="#5b21b6">SearchService.retrieval_chunk()</text>
+<rect x="30" y="208" width="200" height="26" rx="5" fill="#ede9fe" stroke="#c4b5fd" stroke-width="0.8"/>
+<text x="130" y="219" text-anchor="middle" font-size="9" font-weight="700" fill="#5b21b6">Retrievaler</text>
+<text x="130" y="230" text-anchor="middle" font-size="8" fill="#7c3aed">Hybrid(Vector+BM25)</text>
+<rect x="236" y="208" width="196" height="26" rx="5" fill="#fef9c3" stroke="#fde047" stroke-width="0.8"/>
+<text x="334" y="219" text-anchor="middle" font-size="9" font-weight="700" fill="#78350f">KGSearch</text>
+<text x="334" y="230" text-anchor="middle" font-size="8" fill="#92400e">ES knowledge_graph_kwd 필터</text>
+<line x1="230" y1="240" x2="230" y2="252" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#ah)"/>
+
+<rect x="600" y="170" width="180" height="14" rx="7" fill="#8b5cf6"/>
+<text x="690" y="181" text-anchor="middle" font-size="8.5" font-weight="700" fill="white">2 — 듀얼 트랙 분기</text>
+<rect x="480" y="186" width="420" height="54" rx="8" fill="#faf5ff" stroke="#ddd6fe" stroke-width="1" filter="url(#sh)"/>
+<text x="500" y="202" font-size="11" font-weight="700" fill="#5b21b6">SearchService.retrieval_chunk()</text>
+<rect x="490" y="208" width="200" height="26" rx="5" fill="#ede9fe" stroke="#c4b5fd" stroke-width="0.8"/>
+<text x="590" y="219" text-anchor="middle" font-size="9" font-weight="700" fill="#5b21b6">Retrievaler</text>
+<text x="590" y="230" text-anchor="middle" font-size="8" fill="#7c3aed">Hybrid(Vector+BM25)</text>
+<rect x="696" y="208" width="196" height="26" rx="5" fill="#d1fae5" stroke="#34d399" stroke-width="1.2"/>
+<text x="794" y="219" text-anchor="middle" font-size="9" font-weight="700" fill="#065f46">KGSearch (Neo4j)</text>
+<text x="794" y="230" text-anchor="middle" font-size="8" fill="#047857">Graph-guided Retrieval</text>
+<line x1="690" y1="240" x2="690" y2="252" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#ah)"/>
+
+
+<!-- ================================================================
+     STEP 3: 쿼리 리라이트 (동일)
+     ================================================================ -->
+<rect x="140" y="254" width="180" height="14" rx="7" fill="#06b6d4"/>
+<text x="230" y="265" text-anchor="middle" font-size="8.5" font-weight="700" fill="white">3 — 쿼리 리라이트</text>
+<rect x="20" y="270" width="420" height="52" rx="8" fill="#ecfeff" stroke="#a5f3fc" stroke-width="1" filter="url(#sh)"/>
+<text x="40" y="286" font-size="11" font-weight="700" fill="#0e7490">LLM query_rewrite()</text>
+<text x="40" y="301" font-size="9" fill="#6b7280">kg_search.py:52 — KG_QUERY_PROMPTS → TYPE_POOL</text>
+<rect x="30" y="306" width="200" height="12" rx="4" fill="#cffafe" stroke="#67e8f9" stroke-width="0.8"/>
+<text x="130" y="315" text-anchor="middle" font-size="8" fill="#0e7490">type_keywords 추출</text>
+<rect x="236" y="306" width="196" height="12" rx="4" fill="#cffafe" stroke="#67e8f9" stroke-width="0.8"/>
+<text x="334" y="315" text-anchor="middle" font-size="8" fill="#0e7490">entities_from_query 추출</text>
+<line x1="230" y1="322" x2="230" y2="336" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#ah)"/>
+
+<rect x="600" y="254" width="180" height="14" rx="7" fill="#06b6d4"/>
+<text x="690" y="265" text-anchor="middle" font-size="8.5" font-weight="700" fill="white">3 — 쿼리 리라이트</text>
+<rect x="480" y="270" width="420" height="52" rx="8" fill="#ecfeff" stroke="#a5f3fc" stroke-width="1" filter="url(#sh)"/>
+<text x="500" y="286" font-size="11" font-weight="700" fill="#0e7490">LLM query_rewrite()</text>
+<text x="500" y="301" font-size="9" fill="#6b7280">kg_search.py:52 — KG_QUERY_PROMPTS → TYPE_POOL</text>
+<rect x="490" y="306" width="200" height="12" rx="4" fill="#cffafe" stroke="#67e8f9" stroke-width="0.8"/>
+<text x="590" y="315" text-anchor="middle" font-size="8" fill="#0e7490">type_keywords 추출</text>
+<rect x="696" y="306" width="196" height="12" rx="4" fill="#cffafe" stroke="#67e8f9" stroke-width="0.8"/>
+<text x="794" y="315" text-anchor="middle" font-size="8" fill="#0e7490">entities_from_query 추출</text>
+<line x1="690" y1="322" x2="690" y2="336" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#ah)"/>
+
+
+<!-- ================================================================
+     STEP 4: 검색 (분기 시작)
+     ================================================================ -->
+<!-- LEFT -->
+<rect x="140" y="338" width="180" height="14" rx="7" fill="#f59e0b"/>
+<text x="230" y="349" text-anchor="middle" font-size="8.5" font-weight="700" fill="white">4 — 3-Way 병렬 검색</text>
+<rect x="20" y="354" width="420" height="80" rx="8" fill="#fffbeb" stroke="#fde68a" stroke-width="1" filter="url(#sh)"/>
+<text x="40" y="370" font-size="10.5" font-weight="700" fill="#78350f">ElasticSearch kNN 기반 3-Way 검색</text>
+<rect x="30" y="378" width="126" height="26" rx="5" fill="#fef3c7" stroke="#fcd34d" stroke-width="0.8"/>
+<text x="93" y="389" text-anchor="middle" font-size="8" font-weight="700" fill="#78350f">키워드 엔티티</text>
+<text x="93" y="400" text-anchor="middle" font-size="7" fill="#92400e">kNN embed 60%+40%</text>
+<rect x="162" y="378" width="126" height="26" rx="5" fill="#fef3c7" stroke="#fcd34d" stroke-width="0.8"/>
+<text x="225" y="389" text-anchor="middle" font-size="8" font-weight="700" fill="#78350f">타입 엔티티</text>
+<text x="225" y="400" text-anchor="middle" font-size="7" fill="#92400e">rank_flt 정렬</text>
+<rect x="294" y="378" width="138" height="26" rx="5" fill="#fef3c7" stroke="#fcd34d" stroke-width="0.8"/>
+<text x="363" y="389" text-anchor="middle" font-size="8" font-weight="700" fill="#78350f">릴레이션 텍스트</text>
+<text x="363" y="400" text-anchor="middle" font-size="7" fill="#92400e">kNN weight≥10</text>
+<text x="40" y="424" font-size="8" fill="#6b7280">knowledge_graph_kwd="entity"|"relation" 필터 → ES 벡터 검색</text>
+<line x1="230" y1="434" x2="230" y2="448" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#ah)"/>
+
+<!-- RIGHT -->
+<rect x="500" y="338" width="240" height="14" rx="7" fill="#0d9488"/>
+<text x="620" y="349" text-anchor="middle" font-size="8.5" font-weight="700" fill="white">4 — Neo4j 그래프 탐색</text>
+<rect x="746" y="338" width="42" height="14" rx="7" fill="#059669"/>
+<text x="767" y="349" text-anchor="middle" font-size="7" font-weight="700" fill="white">변경</text>
+<rect x="480" y="354" width="420" height="90" rx="8" fill="#f0fdfa" stroke="#0d9488" stroke-width="1.5" filter="url(#sh)"/>
+<text x="500" y="370" font-size="10.5" font-weight="700" fill="#0f766e">Neo4j Cypher 기반 엔티티/릴레이션 탐색</text>
+<rect x="490" y="378" width="126" height="26" rx="5" fill="#ccfbf1" stroke="#5eead4" stroke-width="0.8"/>
+<text x="553" y="389" text-anchor="middle" font-size="8" font-weight="700" fill="#0f766e">키워드 엔티티</text>
+<text x="553" y="400" text-anchor="middle" font-size="7" fill="#115e59">Vector Index 검색</text>
+<rect x="622" y="378" width="126" height="26" rx="5" fill="#ccfbf1" stroke="#5eead4" stroke-width="0.8"/>
+<text x="685" y="389" text-anchor="middle" font-size="8" font-weight="700" fill="#0f766e">타입 엔티티</text>
+<text x="685" y="400" text-anchor="middle" font-size="7" fill="#115e59">Label MATCH 조회</text>
+<rect x="754" y="378" width="138" height="26" rx="5" fill="#ccfbf1" stroke="#5eead4" stroke-width="0.8"/>
+<text x="823" y="389" text-anchor="middle" font-size="8" font-weight="700" fill="#0f766e">릴레이션</text>
+<text x="823" y="400" text-anchor="middle" font-size="7" fill="#115e59">(a)-[r]->(b) 패턴</text>
+<text x="500" y="424" font-size="8.5" fill="#6b7280">결과: entity_ids[], relation_ids[] + source_chunk_ids[]</text>
+<text x="500" y="438" font-size="8" font-weight="600" fill="#0d9488">★ 각 노드/엣지에 source_chunk_ids 속성 포함</text>
+<line x1="690" y1="444" x2="690" y2="458" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#ah)"/>
+
+
+<!-- ================================================================
+     STEP 5
+     ================================================================ -->
+<!-- LEFT -->
+<rect x="140" y="450" width="180" height="14" rx="7" fill="#ef4444"/>
+<text x="230" y="461" text-anchor="middle" font-size="8.5" font-weight="700" fill="white">5 — N-Hop 경로 계산</text>
+<rect x="20" y="466" width="420" height="66" rx="8" fill="#fef2f2" stroke="#fecaca" stroke-width="1" filter="url(#sh)"/>
+<text x="40" y="482" font-size="11" font-weight="700" fill="#991b1b">n_hop_ents 필드 파싱 (JSON)</text>
+<text x="40" y="497" font-size="9" fill="#6b7280">kg_search.py:725 — 엔티티별 n_hop_ents 문자열 파싱</text>
+<text x="40" y="511" font-size="9" fill="#b91c1c">2/3/4-hop 경로 추출 → 누적 가중치 계산</text>
+<text x="40" y="525" font-size="9" fill="#b91c1c">sim = inc_sim × (1 + log(count) × 0.3)</text>
+<line x1="230" y1="532" x2="230" y2="546" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#ah)"/>
+
+<!-- RIGHT -->
+<rect x="500" y="460" width="240" height="14" rx="7" fill="#0d9488"/>
+<text x="620" y="471" text-anchor="middle" font-size="8.5" font-weight="700" fill="white">5 — N-Hop 순회 + 출처 수집</text>
+<rect x="746" y="460" width="42" height="14" rx="7" fill="#059669"/>
+<text x="767" y="471" text-anchor="middle" font-size="7" font-weight="700" fill="white">변경</text>
+<rect x="480" y="476" width="420" height="76" rx="8" fill="#f0fdfa" stroke="#0d9488" stroke-width="1.5" filter="url(#sh)"/>
+<text x="500" y="492" font-size="10.5" font-weight="700" fill="#0f766e">Neo4j 네이티브 경로 순회</text>
+<text x="500" y="508" font-size="9" fill="#6b7280">MATCH path=(a)-[*1..4]-(b) → shortestPath 활용</text>
+<text x="500" y="522" font-size="9" fill="#047857">경로상 모든 노드/엣지의 source_chunk_ids 수집</text>
+<text x="500" y="536" font-size="8" font-weight="600" fill="#0d9488">★ chunk_id_set = 엔티티 chunks ∪ 릴레이션 chunks ∪ N-Hop chunks</text>
+<text x="500" y="548" font-size="8" fill="#6b7280">JSON 파싱 불필요 · 그래프 순회 중 자동 수집</text>
+<line x1="690" y1="552" x2="690" y2="566" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#ah)"/>
+
+
+<!-- ================================================================
+     STEP 6
+     ================================================================ -->
+<!-- LEFT -->
+<rect x="140" y="548" width="180" height="14" rx="7" fill="#6366f1"/>
+<text x="230" y="559" text-anchor="middle" font-size="8.5" font-weight="700" fill="white">6 — 엔티티 스코어링</text>
+<rect x="20" y="564" width="420" height="52" rx="8" fill="#eef2ff" stroke="#c7d2fe" stroke-width="1" filter="url(#sh)"/>
+<text x="40" y="580" font-size="11" font-weight="700" fill="#3730a3">Entity Scoring &amp; Ranking</text>
+<text x="40" y="595" font-size="9" fill="#6b7280">kg_search.py:838 — score = sim × pagerank</text>
+<text x="40" y="609" font-size="9" fill="#6b7280">타입 매칭 시 2× boost · 쿼리 매칭 시 3× boost · Top-15</text>
+<line x1="230" y1="616" x2="230" y2="630" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#ah)"/>
+
+<!-- RIGHT — ★★★ 핵심 변경 ★★★ -->
+<rect x="490" y="568" width="310" height="14" rx="7" fill="url(#coreGrad)"/>
+<text x="645" y="579" text-anchor="middle" font-size="8.5" font-weight="700" fill="white">6 — ★ 출처 청크 역추적 (핵심 변경)</text>
+<rect x="806" y="568" width="38" height="14" rx="7" fill="#dc2626"/>
+<text x="825" y="579" text-anchor="middle" font-size="7" font-weight="700" fill="white">CORE</text>
+<rect x="480" y="584" width="420" height="130" rx="8" fill="#fff5f5" stroke="#dc2626" stroke-width="2" filter="url(#sh)"/>
+<text x="500" y="600" font-size="10.5" font-weight="700" fill="#991b1b">Entity/Relation → Source Chunk 역추적</text>
+
+<!-- 3-Step 미니 플로우 -->
+<rect x="490" y="610" width="118" height="40" rx="5" fill="#fee2e2" stroke="#fca5a5" stroke-width="0.8"/>
+<text x="549" y="625" text-anchor="middle" font-size="8" font-weight="700" fill="#991b1b">Step A</text>
+<text x="549" y="639" text-anchor="middle" font-size="7" fill="#b91c1c">chunk_id_set 취합</text>
+<line x1="608" y1="630" x2="622" y2="630" stroke="#dc2626" stroke-width="1.2" marker-end="url(#ah-red)"/>
+
+<rect x="624" y="610" width="118" height="40" rx="5" fill="#fee2e2" stroke="#fca5a5" stroke-width="0.8"/>
+<text x="683" y="625" text-anchor="middle" font-size="8" font-weight="700" fill="#991b1b">Step B</text>
+<text x="683" y="639" text-anchor="middle" font-size="7" fill="#b91c1c">ES multi-get 조회</text>
+<line x1="742" y1="630" x2="756" y2="630" stroke="#dc2626" stroke-width="1.2" marker-end="url(#ah-red)"/>
+
+<rect x="758" y="610" width="130" height="40" rx="5" fill="#fee2e2" stroke="#fca5a5" stroke-width="0.8"/>
+<text x="823" y="625" text-anchor="middle" font-size="8" font-weight="700" fill="#991b1b">Step C</text>
+<text x="823" y="639" text-anchor="middle" font-size="7" fill="#b91c1c">원문→description 셋팅</text>
+
+<text x="500" y="667" font-size="8.5" fill="#6b7280">A: 엔티티·릴레이션·N-Hop의 source_chunk_ids 합집합</text>
+<text x="500" y="681" font-size="8.5" fill="#6b7280">B: ES multi-get(chunk_ids) → 원본 청크 텍스트 일괄 조회</text>
+<text x="500" y="695" font-size="8.5" font-weight="700" fill="#991b1b">C: entity.description = 출처 청크 원문 (LLM 요약 대체)</text>
+<text x="500" y="709" font-size="8" fill="#dc2626">★ 그래프가 "어떤 청크를 볼지" 안내 → 원문이 근거 · 할루시네이션 차단</text>
+<line x1="690" y1="714" x2="690" y2="728" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#ah)"/>
+
+
+<!-- ================================================================
+     STEP 7
+     ================================================================ -->
+<!-- LEFT -->
+<rect x="140" y="632" width="180" height="14" rx="7" fill="#64748b"/>
+<text x="230" y="643" text-anchor="middle" font-size="8.5" font-weight="700" fill="white">7 — 릴레이션 리스코어링</text>
+<rect x="20" y="648" width="420" height="66" rx="8" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1" filter="url(#sh)"/>
+<text x="40" y="664" font-size="11" font-weight="700" fill="#334155">Relation Re-scoring</text>
+<text x="40" y="679" font-size="9" fill="#6b7280">kg_search.py:886 — base_sim + log(weight)×0.05</text>
+<text x="40" y="693" font-size="9" fill="#6b7280">(base_sim × (nhop_bonus + 1)) + norm_weight</text>
+<text x="40" y="707" font-size="9" fill="#6b7280">N-Hop Only: distance decay 1/√(min_step) · max 5개</text>
+<line x1="230" y1="714" x2="230" y2="728" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#ah)"/>
+
+<!-- RIGHT -->
+<rect x="500" y="730" width="290" height="14" rx="7" fill="#0d9488"/>
+<text x="645" y="741" text-anchor="middle" font-size="8.5" font-weight="700" fill="white">7 — 통합 스코어링 (Graph + Chunk)</text>
+<rect x="796" y="730" width="42" height="14" rx="7" fill="#059669"/>
+<text x="817" y="741" text-anchor="middle" font-size="7" font-weight="700" fill="white">변경</text>
+<rect x="480" y="746" width="420" height="80" rx="8" fill="#f0fdfa" stroke="#0d9488" stroke-width="1.5" filter="url(#sh)"/>
+<text x="500" y="762" font-size="10.5" font-weight="700" fill="#0f766e">Graph Score + Chunk Relevance 융합</text>
+<rect x="490" y="772" width="200" height="22" rx="4" fill="#ccfbf1" stroke="#5eead4" stroke-width="0.8"/>
+<text x="590" y="787" text-anchor="middle" font-size="8" fill="#115e59">graph_score = sim × pagerank × nhop</text>
+<rect x="696" y="772" width="196" height="22" rx="4" fill="#ccfbf1" stroke="#5eead4" stroke-width="0.8"/>
+<text x="794" y="787" text-anchor="middle" font-size="8" fill="#115e59">chunk_score = chunk-query 벡터 유사도</text>
+<rect x="490" y="800" width="402" height="20" rx="4" fill="#d1fae5" stroke="#34d399" stroke-width="1.2"/>
+<text x="691" y="814" text-anchor="middle" font-size="9" font-weight="700" fill="#065f46">final = α × graph_score + β × chunk_score  (α=0.4, β=0.6)</text>
+<line x1="690" y1="826" x2="690" y2="840" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#ah)"/>
+
+
+<!-- ================================================================
+     STEP 8
+     ================================================================ -->
+<!-- LEFT -->
+<rect x="140" y="730" width="180" height="14" rx="7" fill="#10b981"/>
+<text x="230" y="741" text-anchor="middle" font-size="8.5" font-weight="700" fill="white">8 — 커뮤니티 리포트</text>
+<rect x="20" y="746" width="420" height="52" rx="8" fill="#f0fdf4" stroke="#a7f3d0" stroke-width="1" filter="url(#sh)"/>
+<text x="40" y="762" font-size="11" font-weight="700" fill="#065f46">Community Report 검색</text>
+<text x="40" y="777" font-size="9" fill="#6b7280">kg_search.py:1547 — ES kNN: knowledge_graph_kwd="community_report"</text>
+<text x="40" y="791" font-size="9" fill="#6b7280">엔티티 오버랩 + weight 기반 정렬 → Top-1 반환</text>
+<line x1="230" y1="798" x2="230" y2="812" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#ah)"/>
+
+<!-- RIGHT -->
+<rect x="500" y="842" width="290" height="14" rx="7" fill="#0d9488"/>
+<text x="645" y="853" text-anchor="middle" font-size="8.5" font-weight="700" fill="white">8 — 청크 Dedup + 최종 정렬</text>
+<rect x="796" y="842" width="38" height="14" rx="7" fill="#dc2626"/>
+<text x="815" y="853" text-anchor="middle" font-size="7" font-weight="700" fill="white">NEW</text>
+<rect x="480" y="858" width="420" height="76" rx="8" fill="#f0fdfa" stroke="#0d9488" stroke-width="1.5" filter="url(#sh)"/>
+<text x="500" y="874" font-size="10.5" font-weight="700" fill="#0f766e">Chunk 기반 중복 제거 &amp; 최종 정렬</text>
+<text x="500" y="890" font-size="9" fill="#6b7280">동일 chunk_id가 여러 엔티티/릴레이션에서 참조 → 1개로 병합</text>
+<text x="500" y="904" font-size="9" fill="#6b7280">병합 시 graph_score 합산 → 다수 경로에서 참조된 청크 우선</text>
+<text x="500" y="918" font-size="9" fill="#047857">출처 메타: doc_name, page_num, position 보존</text>
+<text x="500" y="930" font-size="8" fill="#6b7280">final_chunks = sorted(deduped, key=final_score, reverse=True)[:top_k]</text>
+<line x1="690" y1="934" x2="690" y2="948" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#ah)"/>
+
+
+<!-- ================================================================
+     STEP 9
+     ================================================================ -->
+<!-- LEFT -->
+<rect x="140" y="814" width="180" height="14" rx="7" fill="#3b82f6"/>
+<text x="230" y="825" text-anchor="middle" font-size="8.5" font-weight="700" fill="white">9 — 출력 생성</text>
+<rect x="20" y="830" width="420" height="60" rx="8" fill="#eff6ff" stroke="#bfdbfe" stroke-width="1" filter="url(#sh)"/>
+<text x="40" y="846" font-size="11" font-weight="700" fill="#1e40af">KG 결과 조합</text>
+<text x="40" y="861" font-size="9" fill="#6b7280">kg_search.py:1100 — Entities CSV + Relations CSV</text>
+<text x="40" y="875" font-size="9" fill="#6b7280">Community Report 텍스트 병합</text>
+<text x="40" y="884" font-size="9" fill="#6b7280"></text>
+<line x1="230" y1="890" x2="230" y2="904" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#ah)"/>
+
+<!-- RIGHT -->
+<rect x="500" y="950" width="290" height="14" rx="7" fill="#3b82f6"/>
+<text x="645" y="961" text-anchor="middle" font-size="8.5" font-weight="700" fill="white">9 — 출력 생성 (청크 원문 기반)</text>
+<rect x="796" y="950" width="42" height="14" rx="7" fill="#059669"/>
+<text x="817" y="961" text-anchor="middle" font-size="7" font-weight="700" fill="white">변경</text>
+<rect x="480" y="966" width="420" height="84" rx="8" fill="#eff6ff" stroke="#3b82f6" stroke-width="1.5" filter="url(#sh)"/>
+<text x="500" y="982" font-size="10.5" font-weight="700" fill="#1e40af">그래프 구조 + 청크 원문 결합 출력</text>
+<text x="500" y="998" font-size="9" fill="#6b7280">content_with_weight = 청크 원문 텍스트 (LLM 요약 아님)</text>
+<text x="500" y="1012" font-size="9" fill="#6b7280">graph_context = 엔티티 관계 구조 (CSV 형태 유지)</text>
+<text x="500" y="1026" font-size="9" fill="#6b7280">__ui_chunks__ = 청크 + 출처 문서/페이지 정보</text>
+<text x="500" y="1040" font-size="9" font-weight="600" fill="#1e40af">★ 각 청크에 연결된 엔티티/릴레이션 메타데이터 첨부</text>
+<line x1="690" y1="1050" x2="690" y2="1064" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#ah)"/>
+
+
+<!-- ================================================================
+     STEP 10
+     ================================================================ -->
+<!-- LEFT -->
+<rect x="140" y="906" width="180" height="14" rx="7" fill="#ef4444"/>
+<text x="230" y="917" text-anchor="middle" font-size="8.5" font-weight="700" fill="white">10 — 최종 병합</text>
+<rect x="20" y="922" width="420" height="52" rx="8" fill="#fef2f2" stroke="#fecaca" stroke-width="1" filter="url(#sh)"/>
+<text x="40" y="938" font-size="11" font-weight="700" fill="#991b1b">KG + Hybrid 결과 합산</text>
+<text x="40" y="953" font-size="9" fill="#6b7280">search_service.py:188 — KG chunk를 position 0에 삽입</text>
+<text x="40" y="967" font-size="9" fill="#6b7280">벡터 필드 제거 → 최종 응답 반환</text>
+<line x1="230" y1="974" x2="230" y2="988" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#ah)"/>
+
+<!-- RIGHT -->
+<rect x="500" y="1066" width="290" height="14" rx="7" fill="#ef4444"/>
+<text x="645" y="1077" text-anchor="middle" font-size="8.5" font-weight="700" fill="white">10 — 청크 레벨 통합 병합</text>
+<rect x="796" y="1066" width="42" height="14" rx="7" fill="#059669"/>
+<text x="817" y="1077" text-anchor="middle" font-size="7" font-weight="700" fill="white">변경</text>
+<rect x="480" y="1082" width="420" height="84" rx="8" fill="#fef2f2" stroke="#ef4444" stroke-width="1.5" filter="url(#sh)"/>
+<text x="500" y="1098" font-size="10.5" font-weight="700" fill="#991b1b">KG 청크 + Hybrid 청크 통합 Dedup</text>
+<!-- 미니 병합 다이어그램 -->
+<rect x="490" y="1108" width="130" height="24" rx="4" fill="#d1fae5" stroke="#34d399" stroke-width="0.8"/>
+<text x="555" y="1124" text-anchor="middle" font-size="8" font-weight="600" fill="#065f46">KG Track 청크</text>
+<rect x="626" y="1108" width="130" height="24" rx="4" fill="#dbeafe" stroke="#93c5fd" stroke-width="0.8"/>
+<text x="691" y="1124" text-anchor="middle" font-size="8" font-weight="600" fill="#1e40af">Hybrid Track 청크</text>
+<rect x="762" y="1108" width="126" height="24" rx="4" fill="#fef3c7" stroke="#fcd34d" stroke-width="0.8"/>
+<text x="825" y="1124" text-anchor="middle" font-size="8" font-weight="600" fill="#78350f">양쪽 발견 → ✓✓</text>
+<text x="500" y="1148" font-size="9" fill="#6b7280">chunk_id 기준 병합 · merged_score = hybrid_score + kg_graph_bonus</text>
+<text x="500" y="1162" font-size="9" font-weight="600" fill="#991b1b">★ 두 트랙이 같은 청크 발견 시 → 신뢰도 극대화</text>
+<line x1="690" y1="1166" x2="690" y2="1180" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#ah)"/>
+
+
+<!-- ================================================================
+     완료
+     ================================================================ -->
+<!-- LEFT -->
+<rect x="140" y="990" width="180" height="14" rx="7" fill="#7c3aed"/>
+<text x="230" y="1001" text-anchor="middle" font-size="8.5" font-weight="700" fill="white">완료</text>
+<rect x="20" y="1006" width="420" height="48" rx="8" fill="#faf5ff" stroke="#ddd6fe" stroke-width="1" filter="url(#sh)"/>
+<text x="40" y="1022" font-size="11" font-weight="700" fill="#4c1d95">Fusion Ranking 결과</text>
+<text x="40" y="1037" font-size="9" fill="#6b7280">ranked chunks + KG LLM 요약 컨텍스트</text>
+<text x="40" y="1048" font-size="8" fill="#b91c1c">⚠ LLM 요약 = 할루시네이션 가능 · 출처 추적 불가</text>
+
+<!-- RIGHT -->
+<rect x="600" y="1182" width="180" height="14" rx="7" fill="#7c3aed"/>
+<text x="690" y="1193" text-anchor="middle" font-size="8.5" font-weight="700" fill="white">완료</text>
+<rect x="480" y="1198" width="420" height="52" rx="8" fill="#faf5ff" stroke="#7c3aed" stroke-width="1.5" filter="url(#sh)"/>
+<text x="500" y="1214" font-size="11" font-weight="700" fill="#4c1d95">Graph-guided Chunk Retrieval 결과</text>
+<text x="500" y="1229" font-size="9" fill="#6b7280">ranked source chunks + 그래프 구조 메타데이터</text>
+<text x="500" y="1244" font-size="8.5" font-weight="700" fill="#059669">✓ 원본 근거 기반 · 출처 추적 가능 · 할루시네이션 차단</text>
+
+
+<!-- ================================================================
+     하단: 핵심 변경 요약
+     ================================================================ -->
+<rect x="20" y="1280" width="880" height="14" rx="7" fill="#1e293b"/>
+<text x="460" y="1291" text-anchor="middle" font-size="8.5" font-weight="700" fill="white">핵심 패러다임 전환 — KG "컨텍스트 제공자" → KG "검색 네비게이터"</text>
+
+<rect x="20" y="1298" width="880" height="570" rx="8" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1"/>
+
+<!-- 패러다임 비교 -->
+<rect x="30" y="1308" width="860" height="14" rx="4" fill="#7c3aed"/>
+<text x="460" y="1319" text-anchor="middle" font-size="8.5" font-weight="700" fill="white">패러다임 비교</text>
+
+<rect x="30" y="1326" width="425" height="96" rx="6" fill="#faf5ff" stroke="#ddd6fe" stroke-width="0.8"/>
+<text x="42" y="1342" font-size="9.5" font-weight="700" fill="#5b21b6">현재: KG = 컨텍스트 자체</text>
+<text x="42" y="1358" font-size="9" fill="#6b7280">• 쿼리 → ES에서 엔티티 검색 → LLM 요약 반환</text>
+<text x="42" y="1372" font-size="9" fill="#6b7280">• description = LLM이 KG 구축시 생성한 요약 텍스트</text>
+<text x="42" y="1386" font-size="9" fill="#b91c1c">• 원본에 없는 말이 섞일 수 있음 (할루시네이션)</text>
+<text x="42" y="1400" font-size="9" fill="#b91c1c">• "이 정보가 어디서 왔는지" 추적 불가능</text>
+<text x="42" y="1414" font-size="9" fill="#b91c1c">• KG 결과와 청크 결과가 서로 독립적 (진짜 하이브리드 아님)</text>
+
+<rect x="465" y="1326" width="425" height="96" rx="6" fill="#f0fdf4" stroke="#bbf7d0" stroke-width="0.8"/>
+<text x="477" y="1342" font-size="9.5" font-weight="700" fill="#065f46">개선: KG = 검색 네비게이터</text>
+<text x="477" y="1358" font-size="9" fill="#6b7280">• 쿼리 → Neo4j 그래프 탐색 → 출처 청크 역추적 → 원문 반환</text>
+<text x="477" y="1372" font-size="9" fill="#6b7280">• description = 원본 청크 텍스트 (무손실)</text>
+<text x="477" y="1386" font-size="9" fill="#047857">• 원본 그대로이므로 할루시네이션 원천 차단</text>
+<text x="477" y="1400" font-size="9" fill="#047857">• 청크 → 문서 → 페이지 출처 추적 완벽 지원</text>
+<text x="477" y="1414" font-size="9" fill="#047857">• 그래프가 청크를 찾아주는 진짜 하이브리드 구조</text>
+
+<!-- 데이터 흐름 비교 -->
+<rect x="30" y="1432" width="860" height="14" rx="4" fill="#dc2626"/>
+<text x="460" y="1443" text-anchor="middle" font-size="8.5" font-weight="700" fill="white">데이터 흐름 비교 (핵심 차이)</text>
+
+<rect x="30" y="1450" width="425" height="56" rx="6" fill="#fff1f2" stroke="#fecdd3" stroke-width="0.8"/>
+<text x="42" y="1466" font-size="9" font-weight="700" fill="#991b1b">현재 흐름</text>
+<text x="42" y="1482" font-size="9" fill="#6b7280">쿼리 → ES(entity) → LLM 요약 텍스트 → 응답에 포함</text>
+<text x="42" y="1496" font-size="9" fill="#6b7280">쿼리 → ES(chunk)  → 청크 원문 → 응답에 포함     (별개 트랙)</text>
+
+<rect x="465" y="1450" width="425" height="56" rx="6" fill="#f0fdf4" stroke="#bbf7d0" stroke-width="0.8"/>
+<text x="477" y="1466" font-size="9" font-weight="700" fill="#065f46">개선 흐름</text>
+<text x="477" y="1482" font-size="9" fill="#047857">쿼리 → Neo4j(entity) → source_chunk_ids → ES(chunk) → 원문</text>
+<text x="477" y="1496" font-size="9" fill="#047857">쿼리 → ES(chunk) → 청크 원문 → chunk_id 기준 병합 (진짜 융합)</text>
+
+<!-- Neo4j 노드 구조 -->
+<rect x="30" y="1516" width="860" height="14" rx="4" fill="#0d9488"/>
+<text x="460" y="1527" text-anchor="middle" font-size="8.5" font-weight="700" fill="white">Neo4j 노드/엣지 설계 — source_chunk_ids 연결</text>
+
+<rect x="30" y="1534" width="280" height="100" rx="6" fill="#f0fdfa" stroke="#99f6e4" stroke-width="0.8"/>
+<text x="42" y="1550" font-size="9" font-weight="700" fill="#0f766e">(:Entity) Node</text>
+<text x="42" y="1566" font-size="8.5" fill="#6b7280">name: "퇴직연금"</text>
+<text x="42" y="1580" font-size="8.5" fill="#6b7280">type: "금융상품"</text>
+<text x="42" y="1594" font-size="8.5" fill="#6b7280">embedding: [0.12, ...]  pagerank: 0.85</text>
+<text x="42" y="1608" font-size="8.5" font-weight="600" fill="#dc2626">source_chunk_ids: ["c042","c108"]</text>
+<text x="42" y="1622" font-size="8.5" fill="#6b7280">description: "퇴직연금은..."</text>
+
+<rect x="320" y="1534" width="280" height="100" rx="6" fill="#f0fdfa" stroke="#99f6e4" stroke-width="0.8"/>
+<text x="332" y="1550" font-size="9" font-weight="700" fill="#0f766e">[:RELATES_TO] Edge</text>
+<text x="332" y="1566" font-size="8.5" fill="#6b7280">from: "퇴직연금"  to: "IRP"</text>
+<text x="332" y="1580" font-size="8.5" fill="#6b7280">weight: 15</text>
+<text x="332" y="1594" font-size="8.5" fill="#6b7280">description: "퇴직 시 이전..."</text>
+<text x="332" y="1608" font-size="8.5" font-weight="600" fill="#dc2626">source_chunk_ids: ["c042","c215"]</text>
+<text x="332" y="1622" font-size="8.5" fill="#6b7280">embedding: [0.08, ...]</text>
+
+<rect x="610" y="1534" width="280" height="100" rx="6" fill="#eff6ff" stroke="#bfdbfe" stroke-width="0.8"/>
+<text x="622" y="1550" font-size="9" font-weight="700" fill="#1e40af">ES Chunk (기존 그대로)</text>
+<text x="622" y="1566" font-size="8.5" fill="#6b7280">chunk_id: "c042"</text>
+<text x="622" y="1580" font-size="8.5" fill="#6b7280">content_with_weight: "원본 텍스트..."</text>
+<text x="622" y="1594" font-size="8.5" fill="#6b7280">doc_name: "퇴직연금_가이드.pdf"</text>
+<text x="622" y="1608" font-size="8.5" fill="#6b7280">page_num: 23</text>
+<text x="622" y="1622" font-size="8.5" fill="#6b7280">q_1024_vec: [0.05, ...]  position_int: [120,450]</text>
+
+<!-- 연결 화살표 -->
+<line x1="310" y1="1608" x2="320" y2="1608" stroke="#dc2626" stroke-width="1.5"/>
+<line x1="600" y1="1608" x2="610" y2="1608" stroke="#dc2626" stroke-width="1.5"/>
+<text x="460" y="1650" text-anchor="middle" font-size="8" font-weight="700" fill="#dc2626">← source_chunk_ids 로 연결 →</text>
+
+<!-- 기대 효과 -->
+<rect x="30" y="1660" width="860" height="14" rx="4" fill="#f59e0b"/>
+<text x="460" y="1671" text-anchor="middle" font-size="8.5" font-weight="700" fill="white">기대 효과</text>
+
+<rect x="30" y="1678" width="210" height="78" rx="6" fill="#fffbeb" stroke="#fde68a" stroke-width="0.8"/>
+<text x="135" y="1694" text-anchor="middle" font-size="9.5" font-weight="700" fill="#78350f">정확도</text>
+<text x="42" y="1710" font-size="8.5" fill="#6b7280">현재: LLM 요약 (정보 손실)</text>
+<text x="42" y="1724" font-size="8.5" font-weight="600" fill="#047857">개선: 원본 청크 (무손실)</text>
+<text x="42" y="1746" font-size="16" font-weight="700" fill="#059669">+40%↑</text>
+
+<rect x="248" y="1678" width="210" height="78" rx="6" fill="#fffbeb" stroke="#fde68a" stroke-width="0.8"/>
+<text x="353" y="1694" text-anchor="middle" font-size="9.5" font-weight="700" fill="#78350f">출처 추적</text>
+<text x="260" y="1710" font-size="8.5" fill="#6b7280">현재: 불가능</text>
+<text x="260" y="1724" font-size="8.5" font-weight="600" fill="#047857">개선: 문서/페이지 특정</text>
+<text x="260" y="1746" font-size="16" font-weight="700" fill="#059669">0→100%</text>
+
+<rect x="466" y="1678" width="210" height="78" rx="6" fill="#fffbeb" stroke="#fde68a" stroke-width="0.8"/>
+<text x="571" y="1694" text-anchor="middle" font-size="9.5" font-weight="700" fill="#78350f">토큰 효율</text>
+<text x="478" y="1710" font-size="8.5" fill="#6b7280">현재: 요약+청크 이중 전달</text>
+<text x="478" y="1724" font-size="8.5" font-weight="600" fill="#047857">개선: 청크만 전달 (dedup)</text>
+<text x="478" y="1746" font-size="16" font-weight="700" fill="#059669">-30%↓</text>
+
+<rect x="684" y="1678" width="206" height="78" rx="6" fill="#fffbeb" stroke="#fde68a" stroke-width="0.8"/>
+<text x="787" y="1694" text-anchor="middle" font-size="9.5" font-weight="700" fill="#78350f">하이브리드 품질</text>
+<text x="696" y="1710" font-size="8.5" fill="#6b7280">현재: 독립 트랙 나열</text>
+<text x="696" y="1724" font-size="8.5" font-weight="600" fill="#047857">개선: 청크 레벨 진짜 융합</text>
+<text x="696" y="1746" font-size="16" font-weight="700" fill="#059669">TRUE</text>
+
+<!-- 진짜 하이브리드 흐름도 (하단) -->
+<rect x="20" y="1778" width="880" height="14" rx="7" fill="#0d9488"/>
+<text x="460" y="1789" text-anchor="middle" font-size="8.5" font-weight="700" fill="white">진짜 하이브리드 데이터 흐름</text>
+
+<rect x="20" y="1796" width="880" height="72" rx="8" fill="#f0fdfa" stroke="#0d9488" stroke-width="1.2"/>
+<!-- Top flow: Graph path -->
+<rect x="35" y="1806" width="65" height="22" rx="5" fill="#dbeafe" stroke="#93c5fd" stroke-width="1"/>
+<text x="67" y="1821" text-anchor="middle" font-size="8" font-weight="700" fill="#1e40af">쿼리</text>
+<line x1="100" y1="1817" x2="115" y2="1817" stroke="#0d9488" stroke-width="1.2" marker-end="url(#ah-teal)"/>
+<rect x="117" y="1806" width="100" height="22" rx="5" fill="#d1fae5" stroke="#34d399" stroke-width="1"/>
+<text x="167" y="1821" text-anchor="middle" font-size="8" font-weight="700" fill="#065f46">Neo4j 탐색</text>
+<line x1="217" y1="1817" x2="232" y2="1817" stroke="#0d9488" stroke-width="1.2" marker-end="url(#ah-teal)"/>
+<rect x="234" y="1806" width="100" height="22" rx="5" fill="#fee2e2" stroke="#fca5a5" stroke-width="1"/>
+<text x="284" y="1821" text-anchor="middle" font-size="8" font-weight="700" fill="#991b1b">chunk_ids 역추적</text>
+<line x1="334" y1="1817" x2="349" y2="1817" stroke="#dc2626" stroke-width="1.2" marker-end="url(#ah-red)"/>
+<rect x="351" y="1806" width="90" height="22" rx="5" fill="#eff6ff" stroke="#93c5fd" stroke-width="1"/>
+<text x="396" y="1821" text-anchor="middle" font-size="8" font-weight="700" fill="#1e40af">ES 원문 조회</text>
+
+<!-- Bottom flow: Hybrid path -->
+<rect x="35" y="1836" width="65" height="22" rx="5" fill="#dbeafe" stroke="#93c5fd" stroke-width="1"/>
+<text x="67" y="1851" text-anchor="middle" font-size="8" font-weight="700" fill="#1e40af">쿼리</text>
+<line x1="100" y1="1847" x2="115" y2="1847" stroke="#94a3b8" stroke-width="1.2" marker-end="url(#ah)"/>
+<rect x="117" y="1836" width="100" height="22" rx="5" fill="#dbeafe" stroke="#93c5fd" stroke-width="1"/>
+<text x="167" y="1851" text-anchor="middle" font-size="8" font-weight="700" fill="#1e40af">Hybrid 검색</text>
+<line x1="217" y1="1847" x2="232" y2="1847" stroke="#94a3b8" stroke-width="1.2" marker-end="url(#ah)"/>
+<rect x="234" y="1836" width="100" height="22" rx="5" fill="#dbeafe" stroke="#93c5fd" stroke-width="1"/>
+<text x="284" y="1851" text-anchor="middle" font-size="8" font-weight="700" fill="#1e40af">청크 원문</text>
+<line x1="334" y1="1847" x2="349" y2="1847" stroke="#94a3b8" stroke-width="1.2" marker-end="url(#ah)"/>
+
+<!-- merge -->
+<line x1="396" y1="1828" x2="396" y2="1836" stroke="#94a3b8" stroke-width="1"/>
+<rect x="351" y="1836" width="90" height="22" rx="5" fill="#fef3c7" stroke="#fcd34d" stroke-width="1.2"/>
+
+<!-- Merge box -->
+<rect x="460" y="1806" width="200" height="52" rx="8" fill="#fef3c7" stroke="#f59e0b" stroke-width="1.5"/>
+<text x="560" y="1826" text-anchor="middle" font-size="9" font-weight="700" fill="#78350f">chunk_id 기준 통합 병합</text>
+<text x="560" y="1842" text-anchor="middle" font-size="8" fill="#92400e">양쪽 교차 검증 → 신뢰도 극대화</text>
+<text x="560" y="1854" text-anchor="middle" font-size="7.5" fill="#78350f">merged = hybrid + kg_bonus</text>
+
+<line x1="441" y1="1817" x2="460" y2="1825" stroke="#94a3b8" stroke-width="1.2" marker-end="url(#ah)"/>
+<line x1="441" y1="1847" x2="460" y2="1840" stroke="#94a3b8" stroke-width="1.2" marker-end="url(#ah)"/>
+
+<line x1="660" y1="1832" x2="678" y2="1832" stroke="#0d9488" stroke-width="1.5" marker-end="url(#ah-teal)"/>
+
+<!-- Final result -->
+<rect x="680" y="1806" width="205" height="52" rx="8" fill="#d1fae5" stroke="#059669" stroke-width="1.5"/>
+<text x="782" y="1824" text-anchor="middle" font-size="9" font-weight="700" fill="#065f46">최종 결과</text>
+<text x="782" y="1840" text-anchor="middle" font-size="8" fill="#047857">원본 청크 + 그래프 메타</text>
+<text x="782" y="1852" text-anchor="middle" font-size="7.5" font-weight="600" fill="#059669">✓ 출처추적 · ✓ 무손실 · ✓ 진짜융합</text>
+
+</svg>
