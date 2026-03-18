@@ -1,0 +1,385 @@
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+  :root {
+    --bg: #ffffff; --bg2: #F9F8F6; --text: #2C2C2A; --text2: #5F5E5A; --text3: #888780;
+    --border: #D3D1C7; --mono: 'SF Mono', 'Consolas', 'Monaco', monospace;
+    --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1a1a1a; --bg2: #232323; --text: #e0dfd8; --text2: #a0a098; --text3: #707068;
+      --border: #3a3a38;
+    }
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: var(--sans); background: var(--bg); color: var(--text); padding: 24px 16px; }
+  .container { max-width: 680px; margin: 0 auto; }
+  .header { text-align: center; margin-bottom: 16px; }
+  .header h1 { font-size: 18px; font-weight: 500; }
+  .header p { font-size: 12px; color: var(--text3); margin-top: 4px; }
+  .arrow { display: flex; justify-content: center; padding: 4px 0; }
+  .arrow svg { width: 20px; height: 24px; }
+  .arrow line, .arrow path { stroke: var(--border); stroke-width: 1.5; }
+  .arrow path { fill: none; stroke-linecap: round; stroke-linejoin: round; }
+
+  .step { border-radius: 10px; border: 1px solid var(--border); overflow: hidden; background: var(--bg); }
+  .step-header { display: flex; align-items: center; gap: 12px; padding: 12px 16px; cursor: pointer; user-select: none; }
+  .step-header.no-children { cursor: default; }
+  .step-num { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 14px; flex-shrink: 0; }
+  .step-title { font-weight: 500; font-size: 14px; }
+  .step-subtitle { font-size: 12px; color: var(--text2); margin-top: 2px; }
+  .chevron { transition: transform 0.2s; }
+  .chevron.open { transform: rotate(180deg); }
+  .step-body { padding: 8px 16px 14px 64px; border-top: 1px solid var(--border); background: var(--bg2); display: none; }
+  .step-body.open { display: block; }
+
+  .sub-item { display: flex; align-items: flex-start; gap: 8px; padding: 4px 0; font-size: 13px; color: var(--text2); }
+  .sub-icon { color: var(--text3); flex-shrink: 0; font-family: var(--mono); font-size: 12px; }
+  .sub-item code { font-size: 12px; color: var(--text); font-family: var(--mono); background: none; }
+  .sub-result { color: var(--text3); font-size: 12px; }
+
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 500; white-space: nowrap; }
+  .badge-blue { background: #E6F1FB; color: #0C447C; border: 1px solid #85B7EB; }
+  .badge-green { background: #EAF3DE; color: #27500A; border: 1px solid #97C459; }
+  .badge-amber { background: #FAEEDA; color: #633806; border: 1px solid #FAC775; }
+  .badge-purple { background: #EEEDFE; color: #3C3489; border: 1px solid #AFA9EC; }
+  .badge-teal { background: #E1F5EE; color: #085041; border: 1px solid #5DCAA5; }
+  .badge-coral { background: #FAECE7; color: #712B13; border: 1px solid #F0997B; }
+  .badge-red { background: #FCEBEB; color: #791F1F; border: 1px solid #F09595; }
+  .badge-gray { background: #F1EFE8; color: #444441; border: 1px solid #B4B2A9; }
+  .badge-pink { background: #FBEAF0; color: #72243E; border: 1px solid #ED93B1; }
+
+  .nested { margin-top: 8px; border-radius: 8px; overflow: hidden; }
+  .nested-header { display: flex; align-items: center; gap: 8px; padding: 8px 12px; cursor: pointer; user-select: none; font-weight: 500; font-size: 13px; }
+  .nested-file { font-size: 11px; margin-left: auto; font-family: var(--mono); }
+  .nested-body { padding: 8px 12px 12px 20px; display: none; }
+  .nested-body.open { display: block; }
+
+  .nested-purple { border: 1px dashed #534AB7; }
+  .nested-purple .nested-header { background: #EEEDFE; color: #3C3489; }
+  .nested-purple .nested-file { color: #534AB7; }
+  .nested-teal { border: 1px dashed #0F6E56; }
+  .nested-teal .nested-header { background: #E1F5EE; color: #085041; }
+  .nested-teal .nested-file { color: #0F6E56; }
+  .nested-coral { border: 1px dashed #993C1D; }
+  .nested-coral .nested-header { background: #FAECE7; color: #712B13; }
+  .nested-coral .nested-file { color: #993C1D; }
+  .nested-amber { border: 1px dashed #854F0B; }
+  .nested-amber .nested-header { background: #FAEEDA; color: #633806; }
+  .nested-amber .nested-file { color: #854F0B; }
+
+  .accent-blue { border-left: 4px solid #185FA5; }
+  .num-blue { background: #E6F1FB; color: #185FA5; }
+  .accent-purple { border-left: 4px solid #534AB7; }
+  .num-purple { background: #EEEDFE; color: #534AB7; }
+  .accent-gray { border-left: 4px solid #5F5E5A; }
+  .num-gray { background: #F1EFE8; color: #5F5E5A; }
+  .accent-teal { border-left: 4px solid #0F6E56; }
+  .num-teal { background: #E1F5EE; color: #0F6E56; }
+  .accent-red { border-left: 4px solid #A32D2D; }
+  .num-red { background: #FCEBEB; color: #A32D2D; }
+  .accent-green { border-left: 4px solid #3B6D11; }
+  .num-green { background: #EAF3DE; color: #3B6D11; }
+
+  .result-box { margin-top: 4px; padding: 6px 10px; border-radius: 6px; background: var(--bg); border: 1px solid var(--border); font-size: 12px; font-family: var(--mono); }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .grid-card { padding: 8px 10px; border-radius: 8px; border: 1px solid var(--border); font-size: 12px; background: var(--bg); }
+  .grid-card h4 { font-weight: 500; font-size: 12px; margin-bottom: 4px; color: var(--text); }
+  .grid-card code { font-family: var(--mono); font-size: 11px; }
+  .grid-card .desc { color: var(--text2); }
+  .badge-row { display: flex; gap: 6px; margin: 4px 0; flex-wrap: wrap; }
+  .section-label { font-weight: 500; font-size: 12px; color: var(--text2); margin: 10px 0 4px; }
+  .section-label:first-child { margin-top: 0; }
+  .done { text-align: center; margin-top: 12px; }
+
+  @media (prefers-color-scheme: dark) {
+    .badge-blue { background: #0C447C; color: #B5D4F4; border-color: #185FA5; }
+    .badge-green { background: #27500A; color: #C0DD97; border-color: #3B6D11; }
+    .badge-amber { background: #633806; color: #FAC775; border-color: #854F0B; }
+    .badge-purple { background: #3C3489; color: #CECBF6; border-color: #534AB7; }
+    .badge-teal { background: #085041; color: #9FE1CB; border-color: #0F6E56; }
+    .badge-coral { background: #712B13; color: #F5C4B3; border-color: #993C1D; }
+    .badge-red { background: #791F1F; color: #F7C1C1; border-color: #A32D2D; }
+    .badge-gray { background: #444441; color: #D3D1C7; border-color: #5F5E5A; }
+    .badge-pink { background: #72243E; color: #F4C0D1; border-color: #993556; }
+    .num-blue { background: #0C447C; color: #B5D4F4; }
+    .num-purple { background: #3C3489; color: #CECBF6; }
+    .num-gray { background: #444441; color: #D3D1C7; }
+    .num-teal { background: #085041; color: #9FE1CB; }
+    .num-red { background: #791F1F; color: #F7C1C1; }
+    .num-green { background: #27500A; color: #C0DD97; }
+    .nested-purple { border-color: #7F77DD; }
+    .nested-purple .nested-header { background: #26215C; color: #CECBF6; }
+    .nested-teal { border-color: #5DCAA5; }
+    .nested-teal .nested-header { background: #04342C; color: #9FE1CB; }
+    .nested-coral { border-color: #F0997B; }
+    .nested-coral .nested-header { background: #4A1B0C; color: #F5C4B3; }
+    .nested-amber { border-color: #FAC775; }
+    .nested-amber .nested-header { background: #412402; color: #FAC775; }
+  }
+</style>
+
+<div class="container">
+  <div class="header">
+    <h1>run_document_rag(doc_id)</h1>
+    <p>parsing_service.py:59</p>
+  </div>
+
+  <!-- ① -->
+  <div class="step" data-has-children>
+    <div class="step-header accent-blue" onclick="toggle(this)">
+      <div class="step-num num-blue">①</div>
+      <div style="flex:1"><div class="step-title">DB 조회</div><div class="step-subtitle">문서 및 지식베이스 객체 로드</div></div>
+      <svg class="chevron" width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>
+    <div class="step-body">
+      <div class="sub-item"><span class="sub-icon">├─</span><div><code>get_doc(db, doc_id)</code> <span class="sub-result">→ doc_obj</span></div></div>
+      <div class="sub-item"><span class="sub-icon">└─</span><div><code>get_kb(db, doc_obj.kb_id)</code> <span class="sub-result">→ kb_obj</span></div></div>
+    </div>
+  </div>
+  <div class="arrow"><svg viewBox="0 0 20 24"><line x1="10" y1="0" x2="10" y2="18"/><path d="M5 14l5 8 5-8"/></svg></div>
+
+  <!-- ② -->
+  <div class="step" data-has-children>
+    <div class="step-header accent-blue" onclick="toggle(this)">
+      <div class="step-num num-blue">②</div>
+      <div style="flex:1"><div class="step-title">파일 로드 (MinIO)</div><div class="step-subtitle">파일 바이트 및 페이지 수 획득</div></div>
+      <svg class="chevron" width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>
+    <div class="step-body">
+      <div class="sub-item"><span class="sub-icon">├─</span><div><code>PDF → get_pdf_page_count_from_minio()</code> <span class="sub-result">→ total_pages, bytes</span> <span class="badge badge-blue">PDF</span></div></div>
+      <div class="sub-item"><span class="sub-icon">└─</span><div><code>기타 → load_bytes_from_minio()</code> <span class="sub-result">→ bytes</span> <span class="badge badge-gray">Other</span></div></div>
+    </div>
+  </div>
+  <div class="arrow"><svg viewBox="0 0 20 24"><line x1="10" y1="0" x2="10" y2="18"/><path d="M5 14l5 8 5-8"/></svg></div>
+
+  <!-- ③ -->
+  <div class="step" data-has-children>
+    <div class="step-header accent-gray" onclick="toggle(this)">
+      <div class="step-num num-gray">③</div>
+      <div style="flex:1"><div class="step-title">시작시간 기록</div><div class="step-subtitle">파싱 시작 타임스탬프 저장</div></div>
+      <svg class="chevron" width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>
+    <div class="step-body">
+      <div class="sub-item"><span class="sub-icon">└─</span><div><code>update_kms_doc_fields(process_begin_at=now)</code></div></div>
+    </div>
+  </div>
+  <div class="arrow"><svg viewBox="0 0 20 24"><line x1="10" y1="0" x2="10" y2="18"/><path d="M5 14l5 8 5-8"/></svg></div>
+
+  <!-- ④ -->
+  <div class="step" data-has-children>
+    <div class="step-header accent-purple" onclick="toggle(this)">
+      <div class="step-num num-purple">④</div>
+      <div style="flex:1"><div class="step-title">청크 생성</div><div class="step-subtitle">build_chunks(doc_obj, kb_obj, file_bytes) — line 98</div></div>
+      <svg class="chevron open" width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>
+    <div class="step-body open">
+      <div class="sub-item"><span class="sub-icon">1.</span><div><code>파일 크기 검사</code> <span class="sub-result">→ &gt;128MB → return None</span> <span class="badge badge-red">Guard</span></div></div>
+      <div class="sub-item"><span class="sub-icon">2.</span><div><code>CHUNKER_MAP[parser_id]() 호출</code></div></div>
+      <div class="badge-row">
+        <span class="badge badge-purple">"general" → general.py:chunk()</span>
+        <span class="badge badge-pink">"qna" → qa.py:chunk()</span>
+      </div>
+
+      <!-- general.py nested -->
+      <div class="nested nested-purple" data-has-children>
+        <div class="nested-header" onclick="toggleNested(this)">
+          <svg class="chevron" width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          general.py:chunk()
+          <span class="nested-file">general.py:12</span>
+        </div>
+        <div class="nested-body">
+          <div class="section-label">A) 메타 토큰화</div>
+          <div class="sub-item"><span class="sub-icon">└─</span><div><code>doc = {docnm_kwd, title_tks, title_sm_tks}</code></div></div>
+
+          <div class="section-label">B) 파일 타입 분기</div>
+          <div class="badge-row"><span class="badge badge-green">Excel (.csv/.xlsx)</span><span class="badge badge-coral">PDF (.pdf)</span></div>
+          <div class="sub-item"><span class="sub-icon">├─</span><div><code>Excel → RAGExcelParser()(file_bytes)</code> <span class="sub-result">→ sections[]</span></div></div>
+
+          <!-- VisionParser nested -->
+          <div class="nested nested-teal" data-has-children>
+            <div class="nested-header" onclick="toggleNested(this)">
+              <svg class="chevron" width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              PDF → VisionParser.__call__()
+              <span class="nested-file">pdf_parser.py:559</span>
+            </div>
+            <div class="nested-body">
+              <div class="sub-item"><span class="sub-icon">1)</span><div><code>페이지 범위 계산</code></div></div>
+              <div class="sub-item"><span class="sub-icon">2)</span><div><code>__images__() → pdfplumber 렌더링</code> <span class="sub-result">→ PIL.Image[]</span> <span class="badge badge-teal">DPI=216</span></div></div>
+              <div class="sub-item"><span class="sub-icon">3)</span><div><code>병렬 _run_one() (Semaphore 제한)</code></div></div>
+
+              <!-- _run_one nested -->
+              <div class="nested nested-coral" data-has-children>
+                <div class="nested-header" onclick="toggleNested(this)">
+                  <svg class="chevron" width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  _run_one(i, img, page_num)
+                </div>
+                <div class="nested-body">
+                  <div class="sub-item"><span class="sub-icon">├─</span><div><code>[NEW] DETR 표 감지</code> <span class="badge badge-amber">NEW</span></div></div>
+                  <div class="sub-item"><span class="sub-icon">│ ├─</span><div><code>detector.detect(img)</code></div></div>
+                  <div class="sub-item"><span class="sub-icon">│ └─</span><div><code>detector.crop_tables(img)</code> <span class="sub-result">→ all_table_detections[]</span></div></div>
+                  <div class="sub-item"><span class="sub-icon">└─</span><div><code>VLM 호출</code></div></div>
+                  <div class="sub-item"><span class="sub-icon">&nbsp; └─</span><div><code>vision_llm_chunk(binary=전체페이지이미지, prompt=describe_prompt)</code> <span class="sub-result">→ markdown 텍스트</span></div></div>
+                </div>
+              </div>
+
+              <div class="sub-item"><span class="sub-icon">4)</span><div><code>결과 조립</code></div></div>
+              <div class="result-box">
+                <div><span style="color:#185FA5">sections:</span> [(md_text, ""), ...]</div>
+                <div><span style="color:#854F0B">tables:</span> [DETR 결과 or []]</div>
+                <div><span style="color:#3B6D11">images:</span> [PIL.Image, ...]</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="section-label">C) 청킹 분기</div>
+          <div class="grid-2">
+            <div class="grid-card">
+              <h4>PDF 경로 <span class="badge badge-coral">images 있음</span></h4>
+              <div class="desc">
+                <code>advanced_chunk_split_with_images()</code><br>→ chunks[], images[], poss[]<br>
+                <code>tokenize_chunks_with_images()</code><br>→ res[] (dict 리스트)
+              </div>
+            </div>
+            <div class="grid-card">
+              <h4>Excel 경로 <span class="badge badge-green">images 없음</span></h4>
+              <div class="desc">
+                <code>advanced_chunk_split()</code><br>→ chunks[] (문자열)<br>
+                <code>tokenize_chunks()</code><br>→ res[] (dict 리스트)
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sub-item" style="margin-top:10px"><span class="sub-icon">3.</span><div><code>doc 메타 병합 (doc_id, kb_id, chunk_type_kwd, pagerank)</code></div></div>
+
+      <!-- ⑤ MinIO upload -->
+      <div class="nested nested-teal" data-has-children>
+        <div class="nested-header" onclick="toggleNested(this)">
+          <svg class="chevron" width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          ⑤ 이미지 MinIO 업로드
+          <span class="nested-file">asyncio.gather 병렬</span>
+        </div>
+        <div class="nested-body">
+          <div class="sub-item"><span class="sub-icon">├─</span><div><code>upload_to_minio(doc, chunk) × N</code></div></div>
+          <div class="sub-item"><span class="sub-icon">├─</span><div><code>deepcopy + merge</code></div></div>
+          <div class="sub-item"><span class="sub-icon">├─</span><div><code>id = xxhash64(content_with_weight + doc_id)</code></div></div>
+          <div class="sub-item"><span class="sub-icon">├─</span><div><code>이미지 없으면 → img_id="" → docs.append</code></div></div>
+          <div class="sub-item"><span class="sub-icon">└─</span><div><code>이미지 있으면: PIL→JPEG → img_hash → MinIO 업로드 (memoization)</code></div></div>
+          <div class="sub-item"><span class="sub-icon">&nbsp;&nbsp;</span><div><code>img_id = "{kb_id}-{img_hash}" → docs.append</code></div></div>
+        </div>
+      </div>
+
+      <!-- ⑥ keyword -->
+      <div class="nested nested-amber" data-has-children>
+        <div class="nested-header" onclick="toggleNested(this)">
+          <svg class="chevron" width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          ⑥ 키워드 생성 (옵션)
+          <span class="nested-file">parser_config.important_kwd</span>
+        </div>
+        <div class="nested-body">
+          <div class="sub-item"><span class="sub-icon">├─</span><div><code>keyword_extraction() × N (asyncio.gather)</code></div></div>
+          <div class="sub-item"><span class="sub-icon">└─</span><div><span class="sub-result">→ d["important_kwd"], d["important_tks"]</span></div></div>
+        </div>
+      </div>
+
+      <!-- ⑦ question -->
+      <div class="nested nested-amber" data-has-children>
+        <div class="nested-header" onclick="toggleNested(this)">
+          <svg class="chevron" width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          ⑦ 질문 생성 (옵션)
+          <span class="nested-file">parser_config.question_kwd</span>
+        </div>
+        <div class="nested-body">
+          <div class="sub-item"><span class="sub-icon">├─</span><div><code>question_proposal() × N (asyncio.gather)</code></div></div>
+          <div class="sub-item"><span class="sub-icon">└─</span><div><span class="sub-result">→ d["question_kwd"], d["question_tks"]</span></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="arrow"><svg viewBox="0 0 20 24"><line x1="10" y1="0" x2="10" y2="18"/><path d="M5 14l5 8 5-8"/></svg></div>
+
+  <!-- ⑧ -->
+  <div class="step" data-has-children>
+    <div class="step-header accent-teal" onclick="toggle(this)">
+      <div class="step-num num-teal">⑧</div>
+      <div style="flex:1"><div class="step-title">임베딩</div><div class="step-subtitle">벡터 생성</div></div>
+      <svg class="chevron" width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>
+    <div class="step-body">
+      <div class="sub-item"><span class="sub-icon">└─</span><div><code>embedding(chunks, app, llm)</code> <span class="sub-result">→ chunks (with q_1024_vec), token_count, vector_size</span></div></div>
+    </div>
+  </div>
+  <div class="arrow"><svg viewBox="0 0 20 24"><line x1="10" y1="0" x2="10" y2="18"/><path d="M5 14l5 8 5-8"/></svg></div>
+
+  <!-- ⑨ -->
+  <div class="step" data-has-children>
+    <div class="step-header accent-red" onclick="toggle(this)">
+      <div class="step-num num-red">⑨</div>
+      <div style="flex:1"><div class="step-title">기존 데이터 삭제</div><div class="step-subtitle">이전 청크 및 그래프 정리</div></div>
+      <svg class="chevron" width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>
+    <div class="step-body">
+      <div class="sub-item"><span class="sub-icon">├─</span><div><code>delete_chunks_data(kb, doc, db, app, minio, es)</code></div></div>
+      <div class="sub-item"><span class="sub-icon">└─</span><div><code>graph_status=="1" → delete_document_graph()</code> <span class="badge badge-amber">조건부</span></div></div>
+    </div>
+  </div>
+  <div class="arrow"><svg viewBox="0 0 20 24"><line x1="10" y1="0" x2="10" y2="18"/><path d="M5 14l5 8 5-8"/></svg></div>
+
+  <!-- ⑩ -->
+  <div class="step" data-has-children>
+    <div class="step-header accent-gray" onclick="toggle(this)">
+      <div class="step-num num-gray">⑩</div>
+      <div style="flex:1"><div class="step-title">중복 제거</div><div class="step-subtitle">동일 ID 청크 필터링</div></div>
+      <svg class="chevron" width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>
+    <div class="step-body">
+      <div class="sub-item"><span class="sub-icon">└─</span><div><code>_dedup_chunks_by_id(chunks)</code> <span class="sub-result">→ unique chunks</span></div></div>
+    </div>
+  </div>
+  <div class="arrow"><svg viewBox="0 0 20 24"><line x1="10" y1="0" x2="10" y2="18"/><path d="M5 14l5 8 5-8"/></svg></div>
+
+  <!-- ⑪ -->
+  <div class="step" data-has-children>
+    <div class="step-header accent-green" onclick="toggle(this)">
+      <div class="step-num num-green">⑪</div>
+      <div style="flex:1"><div class="step-title">ES 저장</div><div class="step-subtitle">Elasticsearch에 청크 삽입</div></div>
+      <svg class="chevron" width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>
+    <div class="step-body">
+      <div class="sub-item"><span class="sub-icon">└─</span><div><code>insert_chunk_tb(chunks, doc, kb, app, es)</code></div></div>
+    </div>
+  </div>
+  <div class="arrow"><svg viewBox="0 0 20 24"><line x1="10" y1="0" x2="10" y2="18"/><path d="M5 14l5 8 5-8"/></svg></div>
+
+  <!-- ⑫ -->
+  <div class="step" data-has-children>
+    <div class="step-header accent-green" onclick="toggle(this)">
+      <div class="step-num num-green">⑫</div>
+      <div style="flex:1"><div class="step-title">문서 상태 업데이트</div><div class="step-subtitle">파싱 완료 상태 기록</div></div>
+      <svg class="chevron" width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>
+    <div class="step-body">
+      <div class="sub-item"><span class="sub-icon">└─</span><div><code>update_kms_doc_fields(chunk_num, parsing_status="1", ...)</code></div></div>
+    </div>
+  </div>
+
+  <div class="done"><span class="badge badge-green">완료</span></div>
+</div>
+
+<script>
+function toggle(header) {
+  const body = header.nextElementSibling;
+  const chevron = header.querySelector('.chevron');
+  body.classList.toggle('open');
+  chevron.classList.toggle('open');
+}
+function toggleNested(header) {
+  const body = header.nextElementSibling;
+  const chevron = header.querySelector('.chevron');
+  body.classList.toggle('open');
+  chevron.classList.toggle('open');
+}
+</script>
